@@ -4,6 +4,7 @@
     PDFDocument, MAX_TOTAL_BYTES, getOptions, downloadPDF, formatBytes,
     showStatus, hideStatus,
   } = PdfApp;
+  const { degrees } = PDFLib;
 
   // ── State ──
   let pdfFile = null;
@@ -184,7 +185,7 @@
             lastPage.drawImage(textImg, {
               x, y,
               opacity,
-              rotate: angle,
+              rotate: degrees(angle),
             });
           }
 
