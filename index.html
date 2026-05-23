@@ -3,78 +3,144 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>JPG to PDF</title>
+  <title>PDFツール — 画像→PDF・PDF結合</title>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
   <header>
     <div class="header-inner">
-      <h1>JPG <span class="arrow">→</span> PDF</h1>
-      <p>画像をPDFに変換。データはすべてブラウザ内で処理され、サーバーには送信されません。</p>
+      <h1>PDF<span class="arrow">ツール</span></h1>
+      <p>画像をPDFに変換・PDFを結合。データはすべてブラウザ内で処理され、サーバーには送信されません。</p>
     </div>
   </header>
 
+  <nav id="tool-nav" class="tool-nav">
+    <button class="tool-nav-btn" data-tool="jpg-to-pdf">画像 → PDF</button>
+    <button class="tool-nav-btn" data-tool="merge-pdf">PDF結合</button>
+  </nav>
+
   <main>
-    <div id="drop-zone" class="drop-zone">
-      <input type="file" id="file-input" multiple accept="image/jpeg,image/png,image/webp" hidden>
-      <div class="drop-zone-inner">
-        <svg class="drop-icon" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <rect x="8" y="12" width="34" height="42" rx="3" stroke="currentColor" stroke-width="3"/>
-          <path d="M42 12l10 10H42V12z" stroke="currentColor" stroke-width="3" stroke-linejoin="round"/>
-          <path d="M18 38l8-10 6 7 4-5 6 8" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
-          <circle cx="21" cy="28" r="2.5" fill="currentColor"/>
-        </svg>
-        <p class="drop-text">ここに画像をドロップ</p>
-        <p class="drop-subtext">または</p>
-        <button class="btn-select" id="select-btn">ファイルを選択</button>
-        <p class="drop-hint">JPG・PNG・WebP 対応</p>
-      </div>
-    </div>
-
-    <section id="workspace" class="workspace hidden">
-      <div id="file-list" class="file-list"></div>
-
-      <div class="add-more-row">
-        <button class="btn-add-more" id="add-more-btn">+ 画像を追加</button>
-      </div>
-
-      <div class="options-panel">
-        <div class="option-group">
-          <label class="option-label">ページの向き</label>
-          <div class="option-buttons" id="opt-orientation">
-            <button class="opt-btn active" data-value="portrait">
-              <span class="icon-portrait"></span>縦向き
-            </button>
-            <button class="opt-btn" data-value="landscape">
-              <span class="icon-landscape"></span>横向き
-            </button>
-          </div>
-        </div>
-
-        <div class="option-group">
-          <label class="option-label">ページサイズ</label>
-          <div class="option-buttons" id="opt-pagesize">
-            <button class="opt-btn active" data-value="fit">画像に合わせる</button>
-            <button class="opt-btn" data-value="a4">A4</button>
-            <button class="opt-btn" data-value="letter">レター</button>
-          </div>
-        </div>
-
-        <div class="option-group">
-          <label class="option-label">余白</label>
-          <div class="option-buttons" id="opt-margin">
-            <button class="opt-btn active" data-value="none">なし</button>
-            <button class="opt-btn" data-value="small">小</button>
-            <button class="opt-btn" data-value="large">大</button>
-          </div>
+    <!-- ════════ 画像 → PDF ════════ -->
+    <section data-tool="jpg-to-pdf">
+      <div id="drop-zone" class="drop-zone">
+        <input type="file" id="file-input" multiple accept="image/jpeg,image/png,image/webp,image/gif,image/bmp" hidden>
+        <div class="drop-zone-inner">
+          <svg class="drop-icon" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <rect x="8" y="12" width="34" height="42" rx="3" stroke="currentColor" stroke-width="3"/>
+            <path d="M42 12l10 10H42V12z" stroke="currentColor" stroke-width="3" stroke-linejoin="round"/>
+            <path d="M18 38l8-10 6 7 4-5 6 8" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+            <circle cx="21" cy="28" r="2.5" fill="currentColor"/>
+          </svg>
+          <p class="drop-text">ここに画像をドロップ</p>
+          <p class="drop-subtext">または</p>
+          <button class="btn-select" id="select-btn">ファイルを選択</button>
+          <p class="drop-hint">JPG・PNG・WebP・GIF・BMP 対応</p>
         </div>
       </div>
 
-      <div class="convert-row">
-        <button class="btn-convert" id="convert-btn">PDFに変換</button>
+      <div id="workspace" class="workspace hidden">
+        <div class="batch-toolbar">
+          <button class="batch-btn" id="batch-rotate">↻ 全て回転</button>
+          <button class="batch-btn" id="batch-name">名前順</button>
+          <button class="batch-btn" id="batch-date">日付順</button>
+          <button class="batch-btn" id="batch-reverse">逆順</button>
+          <button class="batch-btn danger" id="batch-clear">全て削除</button>
+        </div>
+
+        <div id="file-list" class="file-list"></div>
+
+        <div class="add-more-row">
+          <button class="btn-add-more" id="add-more-btn">+ 画像を追加</button>
+        </div>
+
+        <div class="options-panel">
+          <div class="option-group">
+            <label class="option-label">ページの向き</label>
+            <div class="option-buttons" data-opt="orientation">
+              <button class="opt-btn active" data-value="portrait"><span class="icon-portrait"></span>縦向き</button>
+              <button class="opt-btn" data-value="landscape"><span class="icon-landscape"></span>横向き</button>
+            </div>
+          </div>
+
+          <div class="option-group">
+            <label class="option-label">ページサイズ</label>
+            <div class="option-buttons" data-opt="pageSize">
+              <button class="opt-btn active" data-value="fit">画像に合わせる</button>
+              <button class="opt-btn" data-value="a3">A3</button>
+              <button class="opt-btn" data-value="a4">A4</button>
+              <button class="opt-btn" data-value="a5">A5</button>
+              <button class="opt-btn" data-value="b5">B5</button>
+              <button class="opt-btn" data-value="letter">レター</button>
+            </div>
+          </div>
+
+          <div class="option-group">
+            <label class="option-label">余白</label>
+            <div class="option-buttons" data-opt="margin">
+              <button class="opt-btn active" data-value="none">なし</button>
+              <button class="opt-btn" data-value="small">小</button>
+              <button class="opt-btn" data-value="large">大</button>
+            </div>
+          </div>
+
+          <div class="option-group">
+            <label class="option-label">品質</label>
+            <div class="option-buttons" data-opt="quality">
+              <button class="opt-btn active" data-value="high">高品質</button>
+              <button class="opt-btn" data-value="medium">標準</button>
+              <button class="opt-btn" data-value="small">小サイズ</button>
+            </div>
+          </div>
+
+          <div class="option-group">
+            <label class="option-label">ページ番号</label>
+            <div class="option-buttons" data-opt="pageNumber">
+              <button class="opt-btn active" data-value="none">なし</button>
+              <button class="opt-btn" data-value="right">右下</button>
+              <button class="opt-btn" data-value="center">中央下</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="convert-row">
+          <button class="btn-preview" id="preview-btn">プレビュー</button>
+          <button class="btn-convert" id="convert-btn">PDFに変換</button>
+        </div>
+
+        <div id="status" class="status hidden"></div>
+      </div>
+    </section>
+
+    <!-- ════════ PDF結合 ════════ -->
+    <section data-tool="merge-pdf" class="hidden">
+      <div id="merge-drop-zone" class="drop-zone">
+        <input type="file" id="merge-file-input" multiple accept="application/pdf" hidden>
+        <div class="drop-zone-inner">
+          <svg class="drop-icon" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <rect x="12" y="8" width="30" height="40" rx="3" stroke="currentColor" stroke-width="3"/>
+            <rect x="22" y="16" width="30" height="40" rx="3" fill="#fff" stroke="currentColor" stroke-width="3"/>
+          </svg>
+          <p class="drop-text">ここにPDFをドロップ</p>
+          <p class="drop-subtext">または</p>
+          <button class="btn-select" id="merge-select-btn">ファイルを選択</button>
+          <p class="drop-hint">複数のPDFを1つに結合します</p>
+        </div>
       </div>
 
-      <div id="status" class="status hidden"></div>
+      <div id="merge-workspace" class="workspace hidden">
+        <div id="merge-file-list" class="file-list"></div>
+
+        <div class="add-more-row">
+          <button class="btn-add-more" id="merge-add-more-btn">+ PDFを追加</button>
+        </div>
+
+        <div class="convert-row">
+          <button class="btn-preview" id="merge-preview-btn">プレビュー</button>
+          <button class="btn-convert" id="merge-btn">PDFを結合</button>
+        </div>
+
+        <div id="merge-status" class="status hidden"></div>
+      </div>
     </section>
   </main>
 
@@ -82,8 +148,29 @@
     <p>データはブラウザ内のみで処理されます &mdash; サーバーへの送信なし</p>
   </footer>
 
+  <!-- Shared Preview Modal -->
+  <div id="preview-modal" class="modal hidden">
+    <div class="modal-overlay" id="modal-overlay"></div>
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <h2 class="modal-title">PDFプレビュー</h2>
+        <button class="modal-close" id="modal-close">×</button>
+      </div>
+      <div class="modal-body">
+        <iframe id="preview-iframe" class="preview-iframe" title="PDF プレビュー"></iframe>
+      </div>
+      <div class="modal-footer">
+        <span id="preview-size" class="preview-size"></span>
+        <button class="btn-modal-cancel" id="modal-cancel">閉じる</button>
+        <button class="btn-modal-download" id="modal-download">ダウンロード</button>
+      </div>
+    </div>
+  </div>
+
   <script src="libs/Sortable.min.js"></script>
   <script src="libs/pdf-lib.min.js"></script>
-  <script src="main.js"></script>
+  <script src="js/shared.js"></script>
+  <script src="js/jpg-to-pdf.js"></script>
+  <script src="js/merge-pdf.js"></script>
 </body>
 </html>
