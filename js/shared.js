@@ -280,7 +280,7 @@ window.PdfApp = (() => {
     PDFDocument,
     MM_TO_PT, PAGE_SIZES, MARGIN_PT, QUALITY_MAP, MAX_FILES, MAX_TOTAL_BYTES,
     formatBytes, getOptions, calcLayout, processImageFile, imageViaCanvas,
-    isTiff, isHeic, makeThumbnail,
+    isTiff, isHeic, makeThumbnail, loadScript,
     downloadBlob, downloadPDF, showStatus, hideStatus, openPreview, closeModal,
     showTool,
   };

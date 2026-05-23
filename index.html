@@ -31,6 +31,7 @@
     <button class="tool-nav-btn" data-tool="merge-pdf">PDF結合</button>
     <button class="tool-nav-btn" data-tool="compress-pdf">PDF圧縮</button>
     <button class="tool-nav-btn" data-tool="split-pdf">PDF分割</button>
+    <button class="tool-nav-btn" data-tool="ocr">OCR</button>
   </nav>
 
   <main>
@@ -290,6 +291,55 @@
         <div id="spl-status" class="status hidden"></div>
       </div>
     </section>
+
+    <!-- ════════ OCR ════════ -->
+    <section data-tool="ocr" class="hidden">
+      <div id="ocr-drop-zone" class="drop-zone">
+        <input type="file" id="ocr-file-input" accept="application/pdf,image/jpeg,image/png,image/webp,image/gif,image/bmp,image/tiff,.pdf,.jpg,.jpeg,.png,.webp,.gif,.bmp,.tif,.tiff" hidden>
+        <div class="drop-zone-inner">
+          <svg class="drop-icon" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <rect x="12" y="10" width="40" height="44" rx="2" stroke="currentColor" stroke-width="2.5"/>
+            <path d="M18 22h28M18 28h20M18 34h28M18 40h18" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+          </svg>
+          <p class="drop-text">ここにPDFまたは画像をドロップ</p>
+          <p class="drop-subtext">または</p>
+          <button class="btn-select" id="ocr-select-btn">ファイルを選択</button>
+          <p class="drop-hint">PDFまたは画像からテキストを抽出します</p>
+        </div>
+      </div>
+
+      <div id="ocr-workspace" class="workspace hidden">
+        <div id="ocr-info" class="p2j-info"></div>
+
+        <div class="options-panel">
+          <div class="option-group">
+            <label class="option-label">言語</label>
+            <div class="option-buttons" data-opt="lang">
+              <button class="opt-btn active" data-value="jpn">日本語</button>
+              <button class="opt-btn" data-value="eng">英語</button>
+              <button class="opt-btn" data-value="jpn+eng">日本語+英語</button>
+            </div>
+          </div>
+
+          <div class="option-group" id="ocr-page-group" style="display: none;">
+            <label class="option-label">ページ範囲（PDF用）</label>
+            <input type="text" class="text-input" id="ocr-page" placeholder="例: 1-3, 5（空白で全ページ）">
+          </div>
+        </div>
+
+        <div class="convert-row">
+          <button class="btn-convert" id="ocr-btn">テキスト抽出</button>
+        </div>
+
+        <div id="ocr-status" class="status hidden"></div>
+
+        <div class="ocr-result-section">
+          <label class="option-label">抽出結果</label>
+          <textarea id="ocr-result" class="ocr-textarea" readonly></textarea>
+          <button id="ocr-copy-btn" class="btn-copy" style="display: none;">クリップボードにコピー</button>
+        </div>
+      </div>
+    </section>
   </main>
 
   <footer>
@@ -357,5 +407,6 @@
   <script src="js/pdf-to-jpg.js"></script>
   <script src="js/compress-pdf.js"></script>
   <script src="js/split-pdf.js"></script>
+  <script src="js/ocr.js"></script>
 </body>
 </html>
