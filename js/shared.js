@@ -89,7 +89,42 @@ window.PdfApp = (() => {
   }
 
   function isTiff(file) {
-    return file.type === 'image/tiff' || /\.tiff?$/i.test(file.name);
+    return file.type === 'image/tiff' || /\.tiff?$/i.test(file.name || '');
+  }
+
+  function isHeic(file) {
+    return /image\/hei[cf]/.test(file.type) || /\.(heic|heif)$/i.test(file.name || '');
+  }
+
+  // Lazy <script> loader (used to defer the large heic2any/libheif bundle).
+  const loadedScripts = {};
+  function loadScript(src) {
+    if (loadedScripts[src]) return loadedScripts[src];
+    loadedScripts[src] = new Promise((resolve, reject) => {
+      const s = document.createElement('script');
+      s.src = src;
+      s.onload = resolve;
+      s.onerror = () => reject(new Error(`読み込み失敗: ${src}`));
+      document.head.appendChild(s);
+    });
+    return loadedScripts[src];
+  }
+
+  // Decode HEIC/HEIF → JPEG Blob via heic2any (lazy-loaded, best-effort, cached).
+  const heicCache = new WeakMap();
+  async function decodeHeic(file) {
+    if (heicCache.has(file)) return heicCache.get(file);
+    await loadScript('libs/heic2any.min.js');
+    if (typeof heic2any === 'undefined') throw new Error('HEICデコーダを読み込めませんでした');
+    let out;
+    try {
+      out = await heic2any({ blob: file, toType: 'image/jpeg', quality: 0.92 });
+    } catch (e) {
+      throw new Error('このHEICファイルは変換できませんでした。JPEGに変換してからお試しください。');
+    }
+    const blob = Array.isArray(out) ? out[0] : out;
+    heicCache.set(file, blob);
+    return blob;
   }
 
   // Decode a TIFF (first page) to a canvas via UTIF.
@@ -111,6 +146,9 @@ window.PdfApp = (() => {
   // Resolve a file to something drawable on a canvas (HTMLImageElement or canvas).
   // TIFF goes through UTIF; everything else through the native image decoder.
   function loadDrawable(file) {
+    if (isHeic(file)) {
+      return decodeHeic(file).then(loadDrawable); // decoded JPEG → native path
+    }
     if (isTiff(file)) {
       return tiffToCanvas(file).then(c => ({ drawable: c, w: c.width, h: c.height }));
     }
@@ -144,6 +182,9 @@ window.PdfApp = (() => {
 
   // Thumbnail data URL for the card grid. TIFF can't be shown via <img> directly.
   async function makeThumbnail(file) {
+    if (isHeic(file)) {
+      return makeThumbnail(await decodeHeic(file)); // decoded JPEG → FileReader path
+    }
     if (isTiff(file)) {
       const c = await tiffToCanvas(file);
       return c.toDataURL('image/jpeg', 0.7);
@@ -239,7 +280,7 @@ window.PdfApp = (() => {
     PDFDocument,
     MM_TO_PT, PAGE_SIZES, MARGIN_PT, QUALITY_MAP, MAX_FILES, MAX_TOTAL_BYTES,
     formatBytes, getOptions, calcLayout, processImageFile, imageViaCanvas,
-    isTiff, makeThumbnail,
+    isTiff, isHeic, makeThumbnail,
     downloadBlob, downloadPDF, showStatus, hideStatus, openPreview, closeModal,
     showTool,
   };
