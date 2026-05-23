@@ -125,9 +125,7 @@
       if (pages.length === 1) {
         // Single page: extract as single PDF
         const outPdf = await PDFDocument.create();
-        const srcPages = pdfDoc.getPages();
-        const page = srcPages[pages[0] - 1];
-        const copied = await outPdf.copyPage(pdfDoc, pages[0] - 1);
+        const [copied] = await outPdf.copyPages(pdfDoc, [pages[0] - 1]);
         outPdf.addPage(copied);
         const pdfBytes = await outPdf.save();
         downloadPDF(pdfBytes, `${base}-${String(pages[0]).padStart(pad, '0')}.pdf`);
@@ -137,7 +135,7 @@
         const pdfs = []; // { name, bytes }
         for (const p of pages) {
           const outPdf = await PDFDocument.create();
-          const copied = await outPdf.copyPage(pdfDoc, p - 1);
+          const [copied] = await outPdf.copyPages(pdfDoc, [p - 1]);
           outPdf.addPage(copied);
           const pdfBytes = await outPdf.save();
           pdfs.push({ name: `${base}-${String(p).padStart(pad, '0')}.pdf`, bytes: pdfBytes });

@@ -940,6 +940,37 @@ footer {
   background: var(--accent-hover);
 }
 
+/* ── Watermark Inputs ── */
+.text-input {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  font-size: 0.9rem;
+  color: var(--text);
+  background: var(--card-bg);
+}
+
+.text-input:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(96, 165, 250, 0.1);
+}
+
+.range-input {
+  width: 100%;
+  height: 5px;
+  cursor: pointer;
+}
+
+.color-input {
+  width: 60px;
+  height: 40px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  cursor: pointer;
+}
+
 /* ── Hidden utility ── */
 .hidden {
   display: none !important;
