@@ -66,7 +66,8 @@
       const data = new Uint8Array(await file.arrayBuffer());
       pdfDoc = await PDFDocument.load(data);
       pdfFile = file;
-      infoEl.textContent = `${file.name} ・ ${pdfDoc.getPageCount()} ページ`;
+      const pageCount = pdfDoc.getPageCount();
+      infoEl.textContent = `${file.name} ・ ${pageCount} ページ`;
       dropZone.classList.add('hidden');
       workspace.classList.remove('hidden');
     } catch (err) {
@@ -142,8 +143,7 @@
 
     try {
       const outPdf = await PDFDocument.create();
-      const pages = pdfDoc.getPages();
-      const pageCount = pages.length;
+      const pageCount = pdfDoc.getPageCount();
 
       if (mode === 'text') {
         // Text watermark
@@ -159,8 +159,8 @@
 
           // Batch all page copies first, then add watermarks
           const copiedPages = [];
-          for (const page of pages) {
-            const copied = await outPdf.copyPage(pdfDoc, pdfDoc.getPageIndex(page));
+          for (let i = 0; i < pageCount; i++) {
+            const copied = await outPdf.copyPage(pdfDoc, i);
             outPdf.addPage(copied);
             copiedPages.push(outPdf.getPages()[outPdf.getPageCount() - 1]);
           }
@@ -218,8 +218,8 @@
 
         // Batch all page copies first
         const copiedPages = [];
-        for (const page of pages) {
-          const copied = await outPdf.copyPage(pdfDoc, pdfDoc.getPageIndex(page));
+        for (let i = 0; i < pageCount; i++) {
+          const copied = await outPdf.copyPage(pdfDoc, i);
           outPdf.addPage(copied);
           copiedPages.push(outPdf.getPages()[outPdf.getPageCount() - 1]);
         }
