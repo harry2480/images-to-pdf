@@ -19,13 +19,14 @@
     <button class="tool-nav-btn" data-tool="jpg-to-pdf">画像 → PDF</button>
     <button class="tool-nav-btn" data-tool="pdf-to-jpg">PDF → 画像</button>
     <button class="tool-nav-btn" data-tool="merge-pdf">PDF結合</button>
+    <button class="tool-nav-btn" data-tool="compress-pdf">PDF圧縮</button>
   </nav>
 
   <main>
     <!-- ════════ 画像 → PDF ════════ -->
     <section data-tool="jpg-to-pdf">
       <div id="drop-zone" class="drop-zone">
-        <input type="file" id="file-input" multiple accept="image/jpeg,image/png,image/webp,image/gif,image/bmp,image/tiff,.tif,.tiff" hidden>
+        <input type="file" id="file-input" multiple accept="image/jpeg,image/png,image/webp,image/gif,image/bmp,image/tiff,image/heic,image/heif,.tif,.tiff,.heic,.heif" hidden>
         <div class="drop-zone-inner">
           <svg class="drop-icon" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
             <rect x="8" y="12" width="34" height="42" rx="3" stroke="currentColor" stroke-width="3"/>
@@ -36,7 +37,7 @@
           <p class="drop-text">ここに画像をドロップ</p>
           <p class="drop-subtext">または</p>
           <button class="btn-select" id="select-btn">ファイルを選択</button>
-          <p class="drop-hint">JPG・PNG・WebP・GIF・BMP・TIFF 対応</p>
+          <p class="drop-hint">JPG・PNG・WebP・GIF・BMP・TIFF・HEIC 対応</p>
         </div>
       </div>
 
@@ -196,6 +197,45 @@
         <div id="p2j-status" class="status hidden"></div>
       </div>
     </section>
+
+    <!-- ════════ PDF圧縮 ════════ -->
+    <section data-tool="compress-pdf" class="hidden">
+      <div id="cmp-drop-zone" class="drop-zone">
+        <input type="file" id="cmp-file-input" accept="application/pdf" hidden>
+        <div class="drop-zone-inner">
+          <svg class="drop-icon" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <rect x="14" y="8" width="36" height="48" rx="3" stroke="currentColor" stroke-width="3"/>
+            <path d="M26 30l6 6 6-6M32 36V20" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          <p class="drop-text">ここにPDFをドロップ</p>
+          <p class="drop-subtext">または</p>
+          <button class="btn-select" id="cmp-select-btn">ファイルを選択</button>
+          <p class="drop-hint">画像PDF（スキャン等）のファイルサイズを縮小します</p>
+        </div>
+      </div>
+
+      <div id="cmp-workspace" class="workspace hidden">
+        <div id="cmp-info" class="p2j-info"></div>
+        <div id="cmp-warning" class="status error hidden"></div>
+
+        <div class="options-panel">
+          <div class="option-group">
+            <label class="option-label">圧縮率</label>
+            <div class="option-buttons" data-opt="level">
+              <button class="opt-btn" data-value="strong">強（小さい）</button>
+              <button class="opt-btn active" data-value="medium">中</button>
+              <button class="opt-btn" data-value="light">弱（高画質）</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="convert-row">
+          <button class="btn-convert" id="cmp-btn">圧縮する</button>
+        </div>
+
+        <div id="cmp-status" class="status hidden"></div>
+      </div>
+    </section>
   </main>
 
   <footer>
@@ -261,5 +301,6 @@
   <script src="js/jpg-to-pdf.js"></script>
   <script src="js/merge-pdf.js"></script>
   <script src="js/pdf-to-jpg.js"></script>
+  <script src="js/compress-pdf.js"></script>
 </body>
 </html>

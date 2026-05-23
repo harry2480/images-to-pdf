@@ -3,13 +3,14 @@
   const {
     PDFDocument, MARGIN_PT, QUALITY_MAP, MAX_FILES, MAX_TOTAL_BYTES,
     calcLayout, processImageFile, getOptions, downloadPDF, formatBytes,
-    showStatus, hideStatus, openPreview, isTiff, makeThumbnail, openCropEditor,
+    showStatus, hideStatus, openPreview, isTiff, isHeic, makeThumbnail, openCropEditor,
   } = PdfApp;
   const { StandardFonts, rgb } = PDFLib;
 
   const ALLOWED = ['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'image/bmp', 'image/tiff'];
   function isAllowed(file) {
-    return ALLOWED.includes(file.type) || isTiff(file); // some TIFFs report empty MIME
+    // TIFF/HEIC often report empty MIME → also accept by extension.
+    return ALLOWED.includes(file.type) || isTiff(file) || isHeic(file);
   }
 
   // ── State ──
@@ -87,6 +88,10 @@
 
     if (files.length > 0) showWorkspace();
     updateNumbers();
+    if (incoming.some(isHeic)) {
+      showStatus(statusEl, 'success', 'HEIC を変換中です…（初回は読み込みに時間がかかります）');
+      setTimeout(() => { if (statusEl.textContent.startsWith('HEIC')) hideStatus(statusEl); }, 6000);
+    }
     if (skipped > 0) {
       showStatus(statusEl, 'error',
         `上限（${MAX_FILES}枚 / ${formatBytes(MAX_TOTAL_BYTES)}）を超えるため ${skipped} 件を追加できませんでした`);
