@@ -1,0 +1,439 @@
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+:root {
+  --accent: #e8192c;
+  --accent-hover: #c8152a;
+  --accent-light: #fff0f1;
+  --border: #dde1e7;
+  --bg: #f5f7fa;
+  --card-bg: #ffffff;
+  --text: #1a1a2e;
+  --text-muted: #6b7280;
+  --radius: 12px;
+  --shadow: 0 2px 12px rgba(0,0,0,0.08);
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Hiragino Sans', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ── Header ── */
+header {
+  background: #fff;
+  border-bottom: 1px solid var(--border);
+  padding: 24px 20px;
+}
+
+.header-inner {
+  max-width: 860px;
+  margin: 0 auto;
+  text-align: center;
+}
+
+h1 {
+  font-size: 2rem;
+  font-weight: 700;
+  color: var(--accent);
+  letter-spacing: -0.5px;
+}
+
+h1 .arrow {
+  color: var(--text);
+  font-weight: 300;
+}
+
+header p {
+  margin-top: 6px;
+  color: var(--text-muted);
+  font-size: 0.875rem;
+}
+
+/* ── Main ── */
+main {
+  flex: 1;
+  max-width: 860px;
+  width: 100%;
+  margin: 32px auto;
+  padding: 0 16px;
+}
+
+/* ── Drop Zone ── */
+.drop-zone {
+  background: var(--card-bg);
+  border: 2.5px dashed var(--border);
+  border-radius: var(--radius);
+  padding: 52px 20px;
+  text-align: center;
+  cursor: pointer;
+  transition: border-color 0.2s, background 0.2s;
+}
+
+.drop-zone:hover,
+.drop-zone.drag-over {
+  border-color: var(--accent);
+  background: var(--accent-light);
+}
+
+.drop-zone-inner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+.drop-icon {
+  width: 56px;
+  height: 56px;
+  color: var(--accent);
+  margin-bottom: 4px;
+}
+
+.drop-text {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.drop-subtext {
+  color: var(--text-muted);
+  font-size: 0.875rem;
+}
+
+.btn-select {
+  background: var(--accent);
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 10px 28px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s;
+  margin-top: 4px;
+}
+
+.btn-select:hover {
+  background: var(--accent-hover);
+}
+
+.drop-hint {
+  color: var(--text-muted);
+  font-size: 0.78rem;
+  margin-top: 4px;
+}
+
+/* ── Workspace ── */
+.workspace {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.workspace.hidden {
+  display: none;
+}
+
+/* ── File List ── */
+.file-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 14px;
+}
+
+.file-card {
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  overflow: hidden;
+  box-shadow: var(--shadow);
+  position: relative;
+  cursor: grab;
+  transition: transform 0.15s, box-shadow 0.15s;
+  user-select: none;
+}
+
+.file-card:active {
+  cursor: grabbing;
+}
+
+.file-card.sortable-ghost {
+  opacity: 0.35;
+}
+
+.file-card.sortable-chosen {
+  transform: scale(1.03);
+  box-shadow: 0 6px 24px rgba(0,0,0,0.14);
+}
+
+.file-card-thumb {
+  width: 100%;
+  aspect-ratio: 1;
+  object-fit: cover;
+  display: block;
+  background: #f0f0f0;
+}
+
+.file-card-info {
+  padding: 8px 10px;
+}
+
+.file-card-name {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.file-card-num {
+  position: absolute;
+  top: 7px;
+  left: 8px;
+  background: rgba(0,0,0,0.55);
+  color: #fff;
+  font-size: 0.7rem;
+  font-weight: 700;
+  padding: 2px 7px;
+  border-radius: 20px;
+}
+
+.file-card-delete {
+  position: absolute;
+  top: 6px;
+  right: 7px;
+  background: rgba(0,0,0,0.55);
+  color: #fff;
+  border: none;
+  border-radius: 50%;
+  width: 22px;
+  height: 22px;
+  font-size: 14px;
+  line-height: 1;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.15s;
+}
+
+.file-card-delete:hover {
+  background: var(--accent);
+}
+
+/* ── Add More ── */
+.add-more-row {
+  display: flex;
+  justify-content: flex-start;
+}
+
+.btn-add-more {
+  background: transparent;
+  border: 2px dashed var(--border);
+  border-radius: 8px;
+  padding: 9px 22px;
+  font-size: 0.9rem;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: border-color 0.15s, color 0.15s;
+}
+
+.btn-add-more:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+/* ── Options Panel ── */
+.options-panel {
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 20px 24px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20px;
+}
+
+.option-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  flex: 1;
+  min-width: 180px;
+}
+
+.option-label {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.option-buttons {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.opt-btn {
+  background: #f3f4f6;
+  border: 1.5px solid var(--border);
+  border-radius: 7px;
+  padding: 7px 14px;
+  font-size: 0.85rem;
+  color: var(--text);
+  cursor: pointer;
+  transition: all 0.15s;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.opt-btn:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.opt-btn.active {
+  background: var(--accent-light);
+  border-color: var(--accent);
+  color: var(--accent);
+  font-weight: 600;
+}
+
+/* portrait / landscape icons */
+.icon-portrait,
+.icon-landscape {
+  display: inline-block;
+  border: 1.5px solid currentColor;
+  border-radius: 2px;
+}
+
+.icon-portrait {
+  width: 9px;
+  height: 13px;
+}
+
+.icon-landscape {
+  width: 13px;
+  height: 9px;
+}
+
+/* ── Convert Button ── */
+.convert-row {
+  display: flex;
+  justify-content: center;
+}
+
+.btn-convert {
+  background: var(--accent);
+  color: #fff;
+  border: none;
+  border-radius: 10px;
+  padding: 15px 52px;
+  font-size: 1.05rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.15s, transform 0.1s;
+  min-width: 200px;
+}
+
+.btn-convert:hover:not(:disabled) {
+  background: var(--accent-hover);
+}
+
+.btn-convert:active:not(:disabled) {
+  transform: scale(0.98);
+}
+
+.btn-convert:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+}
+
+.btn-convert.loading::after {
+  content: '';
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  border: 2px solid rgba(255,255,255,0.4);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+  margin-left: 10px;
+  vertical-align: middle;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* ── Status ── */
+.status {
+  text-align: center;
+  padding: 14px 20px;
+  border-radius: 8px;
+  font-size: 0.95rem;
+  font-weight: 500;
+}
+
+.status.hidden {
+  display: none;
+}
+
+.status.success {
+  background: #ecfdf5;
+  color: #065f46;
+  border: 1px solid #a7f3d0;
+}
+
+.status.error {
+  background: #fff0f1;
+  color: #9b1c1c;
+  border: 1px solid #fca5a5;
+}
+
+/* ── Footer ── */
+footer {
+  text-align: center;
+  padding: 20px;
+  color: var(--text-muted);
+  font-size: 0.8rem;
+  border-top: 1px solid var(--border);
+  background: #fff;
+}
+
+/* ── Hidden utility ── */
+.hidden {
+  display: none !important;
+}
+
+/* ── Responsive ── */
+@media (max-width: 600px) {
+  h1 { font-size: 1.5rem; }
+
+  .drop-zone { padding: 36px 16px; }
+
+  .file-list {
+    grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+  }
+
+  .options-panel {
+    padding: 16px;
+    flex-direction: column;
+  }
+
+  .btn-convert {
+    width: 100%;
+    padding: 14px;
+  }
+}
