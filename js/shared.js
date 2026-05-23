@@ -88,32 +88,112 @@ window.PdfApp = (() => {
     return imageViaCanvas(file, rotation, qualityVal);
   }
 
-  function imageViaCanvas(file, rotation, qualityVal) {
+  function isTiff(file) {
+    return file.type === 'image/tiff' || /\.tiff?$/i.test(file.name || '');
+  }
+
+  function isHeic(file) {
+    return /image\/hei[cf]/.test(file.type) || /\.(heic|heif)$/i.test(file.name || '');
+  }
+
+  // Lazy <script> loader (used to defer the large heic2any/libheif bundle).
+  const loadedScripts = {};
+  function loadScript(src) {
+    if (loadedScripts[src]) return loadedScripts[src];
+    loadedScripts[src] = new Promise((resolve, reject) => {
+      const s = document.createElement('script');
+      s.src = src;
+      s.onload = resolve;
+      s.onerror = () => reject(new Error(`読み込み失敗: ${src}`));
+      document.head.appendChild(s);
+    });
+    return loadedScripts[src];
+  }
+
+  // Decode HEIC/HEIF → JPEG Blob via heic2any (lazy-loaded, best-effort, cached).
+  const heicCache = new WeakMap();
+  async function decodeHeic(file) {
+    if (heicCache.has(file)) return heicCache.get(file);
+    await loadScript('libs/heic2any.min.js');
+    if (typeof heic2any === 'undefined') throw new Error('HEICデコーダを読み込めませんでした');
+    let out;
+    try {
+      out = await heic2any({ blob: file, toType: 'image/jpeg', quality: 0.92 });
+    } catch (e) {
+      throw new Error('このHEICファイルは変換できませんでした。JPEGに変換してからお試しください。');
+    }
+    const blob = Array.isArray(out) ? out[0] : out;
+    heicCache.set(file, blob);
+    return blob;
+  }
+
+  // Decode a TIFF (first page) to a canvas via UTIF.
+  async function tiffToCanvas(file) {
+    if (typeof UTIF === 'undefined') throw new Error('TIFFデコーダ未読み込み');
+    const buf = await file.arrayBuffer();
+    const ifds = UTIF.decode(buf);
+    if (!ifds.length) throw new Error('TIFFを読み込めませんでした');
+    UTIF.decodeImage(buf, ifds[0]);
+    const rgba = UTIF.toRGBA8(ifds[0]);
+    const { width, height } = ifds[0];
+    const canvas = document.createElement('canvas');
+    canvas.width = width;
+    canvas.height = height;
+    canvas.getContext('2d').putImageData(new ImageData(new Uint8ClampedArray(rgba.buffer), width, height), 0, 0);
+    return canvas;
+  }
+
+  // Resolve a file to something drawable on a canvas (HTMLImageElement or canvas).
+  // TIFF goes through UTIF; everything else through the native image decoder.
+  function loadDrawable(file) {
+    if (isHeic(file)) {
+      return decodeHeic(file).then(loadDrawable); // decoded JPEG → native path
+    }
+    if (isTiff(file)) {
+      return tiffToCanvas(file).then(c => ({ drawable: c, w: c.width, h: c.height }));
+    }
     return new Promise((resolve, reject) => {
       const url = URL.createObjectURL(file);
       const img = new Image();
-      img.onload = () => {
-        const rotated90 = rotation === 90 || rotation === 270;
-        const canvas = document.createElement('canvas');
-        canvas.width  = rotated90 ? img.naturalHeight : img.naturalWidth;
-        canvas.height = rotated90 ? img.naturalWidth  : img.naturalHeight;
-        const ctx = canvas.getContext('2d');
-        ctx.translate(canvas.width / 2, canvas.height / 2);
-        ctx.rotate((rotation * Math.PI) / 180);
-        ctx.drawImage(img, -img.naturalWidth / 2, -img.naturalHeight / 2);
-        URL.revokeObjectURL(url);
-        // PNG keeps transparency; everything else (incl. GIF/BMP/WebP) → JPEG.
-        const outType = file.type === 'image/png' ? 'image/png' : 'image/jpeg';
-        const q = file.type === 'image/png' ? undefined : qualityVal;
-        canvas.toBlob(blob => {
-          if (!blob) { reject(new Error('変換失敗')); return; }
-          blob.arrayBuffer()
-            .then(bytes => resolve({ bytes, isJpeg: outType === 'image/jpeg' }))
-            .catch(reject);
-        }, outType, q);
-      };
+      img.onload = () => { URL.revokeObjectURL(url); resolve({ drawable: img, w: img.naturalWidth, h: img.naturalHeight }); };
       img.onerror = () => { URL.revokeObjectURL(url); reject(new Error('画像読み込み失敗')); };
       img.src = url;
+    });
+  }
+
+  // Decode → (rotate) → re-encode to JPEG/PNG bytes for pdf-lib embedding.
+  async function imageViaCanvas(file, rotation, qualityVal) {
+    const { drawable, w, h } = await loadDrawable(file);
+    const rotated90 = rotation === 90 || rotation === 270;
+    const canvas = document.createElement('canvas');
+    canvas.width  = rotated90 ? h : w;
+    canvas.height = rotated90 ? w : h;
+    const ctx = canvas.getContext('2d');
+    ctx.translate(canvas.width / 2, canvas.height / 2);
+    ctx.rotate((rotation * Math.PI) / 180);
+    ctx.drawImage(drawable, -w / 2, -h / 2);
+    // PNG keeps transparency; everything else (incl. GIF/BMP/WebP/TIFF) → JPEG.
+    const outType = file.type === 'image/png' ? 'image/png' : 'image/jpeg';
+    const q = file.type === 'image/png' ? undefined : qualityVal;
+    const blob = await new Promise(res => canvas.toBlob(res, outType, q));
+    if (!blob) throw new Error('変換失敗');
+    return { bytes: await blob.arrayBuffer(), isJpeg: outType === 'image/jpeg' };
+  }
+
+  // Thumbnail data URL for the card grid. TIFF can't be shown via <img> directly.
+  async function makeThumbnail(file) {
+    if (isHeic(file)) {
+      return makeThumbnail(await decodeHeic(file)); // decoded JPEG → FileReader path
+    }
+    if (isTiff(file)) {
+      const c = await tiffToCanvas(file);
+      return c.toDataURL('image/jpeg', 0.7);
+    }
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = e => resolve(e.target.result);
+      reader.onerror = () => reject(new Error('読み込み失敗'));
+      reader.readAsDataURL(file);
     });
   }
 
@@ -200,6 +280,7 @@ window.PdfApp = (() => {
     PDFDocument,
     MM_TO_PT, PAGE_SIZES, MARGIN_PT, QUALITY_MAP, MAX_FILES, MAX_TOTAL_BYTES,
     formatBytes, getOptions, calcLayout, processImageFile, imageViaCanvas,
+    isTiff, isHeic, makeThumbnail,
     downloadBlob, downloadPDF, showStatus, hideStatus, openPreview, closeModal,
     showTool,
   };
