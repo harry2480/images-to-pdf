@@ -50,6 +50,7 @@
     <button class="tool-nav-btn" data-tool="compress-pdf">PDF圧縮</button>
     <button class="tool-nav-btn" data-tool="split-pdf">PDF分割</button>
     <button class="tool-nav-btn" data-tool="ocr">OCR</button>
+    <button class="tool-nav-btn" data-tool="watermark">透かし</button>
   </nav>
 
   <main>
@@ -358,6 +359,101 @@
         </div>
       </div>
     </section>
+
+    <!-- ════════ 透かし ════════ -->
+    <section data-tool="watermark" class="hidden">
+      <div id="wm-drop-zone" class="drop-zone">
+        <input type="file" id="wm-file-input" accept="application/pdf" hidden>
+        <div class="drop-zone-inner">
+          <svg class="drop-icon" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <rect x="14" y="8" width="36" height="48" rx="3" stroke="currentColor" stroke-width="3"/>
+            <text x="32" y="32" text-anchor="middle" font-size="18" font-weight="bold" fill="currentColor" opacity="0.4">W</text>
+          </svg>
+          <p class="drop-text">ここにPDFをドロップ</p>
+          <p class="drop-subtext">または</p>
+          <button class="btn-select" id="wm-select-btn">ファイルを選択</button>
+          <p class="drop-hint">PDFに透かしを追加します</p>
+        </div>
+      </div>
+
+      <div id="wm-workspace" class="workspace hidden">
+        <div id="wm-info" class="p2j-info"></div>
+
+        <div class="options-panel">
+          <div class="option-group">
+            <label class="option-label">透かしタイプ</label>
+            <div class="option-buttons" data-opt="mode">
+              <button class="opt-btn active" data-value="text">テキスト</button>
+              <button class="opt-btn" data-value="image">画像</button>
+            </div>
+          </div>
+
+          <!-- Text watermark options -->
+          <div id="wm-text-group">
+            <div class="option-group">
+              <label class="option-label">透かしテキスト</label>
+              <input type="text" class="text-input" id="wm-text" placeholder="例: CONFIDENTIAL" value="WATERMARK">
+            </div>
+
+            <div class="option-group">
+              <label class="option-label">フォントサイズ</label>
+              <input type="number" class="text-input" id="wm-size" min="20" max="120" value="60">
+            </div>
+
+            <div class="option-group">
+              <label class="option-label">透明度</label>
+              <input type="range" class="range-input" id="wm-opacity" min="0" max="1" step="0.1" value="0.3">
+              <span id="wm-opacity-display">30%</span>
+            </div>
+
+            <div class="option-group">
+              <label class="option-label">回転角度（度）</label>
+              <input type="number" class="text-input" id="wm-angle" min="-180" max="180" value="45">
+            </div>
+
+            <div class="option-group">
+              <label class="option-label">色</label>
+              <input type="color" class="color-input" id="wm-color" value="#000000">
+            </div>
+          </div>
+
+          <!-- Image watermark options -->
+          <div id="wm-image-group" style="display: none;">
+            <div class="option-group">
+              <label class="option-label">透かし画像</label>
+              <input type="file" id="wm-image-file" accept="image/png,image/jpeg,.png,.jpg,.jpeg" hidden>
+              <button class="btn-select" id="wm-select-image-btn">画像を選択</button>
+            </div>
+
+            <div class="option-group">
+              <label class="option-label">サイズ（ページ幅の％）</label>
+              <input type="number" class="text-input" id="wm-image-size" min="5" max="100" value="30">
+            </div>
+
+            <div class="option-group">
+              <label class="option-label">透明度</label>
+              <input type="range" class="range-input" id="wm-image-opacity" min="0" max="1" step="0.1" value="0.3">
+              <span id="wm-image-opacity-display">30%</span>
+            </div>
+          </div>
+
+          <!-- Position options (common) -->
+          <div class="option-group">
+            <label class="option-label">位置</label>
+            <div class="option-buttons" data-opt="position">
+              <button class="opt-btn active" data-value="center">中央</button>
+              <button class="opt-btn" data-value="bottom-right">右下</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="convert-row">
+          <button class="btn-convert" id="wm-btn">透かしを追加</button>
+        </div>
+
+        <div id="wm-status" class="status hidden"></div>
+      </div>
+    </section>
   </main>
 
   <footer>
@@ -426,5 +522,6 @@
   <script src="js/compress-pdf.js"></script>
   <script src="js/split-pdf.js"></script>
   <script src="js/ocr.js"></script>
+  <script src="js/watermark.js"></script>
 </body>
 </html>
