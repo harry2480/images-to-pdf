@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>JPG to PDF</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header>
+    <div class="header-inner">
+      <h1>JPG <span class="arrow">→</span> PDF</h1>
+      <p>画像をPDFに変換。データはすべてブラウザ内で処理され、サーバーには送信されません。</p>
+    </div>
+  </header>
+
+  <main>
+    <div id="drop-zone" class="drop-zone">
+      <input type="file" id="file-input" multiple accept="image/jpeg,image/png,image/webp" hidden>
+      <div class="drop-zone-inner">
+        <svg class="drop-icon" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <rect x="8" y="12" width="34" height="42" rx="3" stroke="currentColor" stroke-width="3"/>
+          <path d="M42 12l10 10H42V12z" stroke="currentColor" stroke-width="3" stroke-linejoin="round"/>
+          <path d="M18 38l8-10 6 7 4-5 6 8" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+          <circle cx="21" cy="28" r="2.5" fill="currentColor"/>
+        </svg>
+        <p class="drop-text">ここに画像をドロップ</p>
+        <p class="drop-subtext">または</p>
+        <button class="btn-select" id="select-btn">ファイルを選択</button>
+        <p class="drop-hint">JPG・PNG・WebP 対応</p>
+      </div>
+    </div>
+
+    <section id="workspace" class="workspace hidden">
+      <div id="file-list" class="file-list"></div>
+
+      <div class="add-more-row">
+        <button class="btn-add-more" id="add-more-btn">+ 画像を追加</button>
+      </div>
+
+      <div class="options-panel">
+        <div class="option-group">
+          <label class="option-label">ページの向き</label>
+          <div class="option-buttons" id="opt-orientation">
+            <button class="opt-btn active" data-value="portrait">
+              <span class="icon-portrait"></span>縦向き
+            </button>
+            <button class="opt-btn" data-value="landscape">
+              <span class="icon-landscape"></span>横向き
+            </button>
+          </div>
+        </div>
+
+        <div class="option-group">
+          <label class="option-label">ページサイズ</label>
+          <div class="option-buttons" id="opt-pagesize">
+            <button class="opt-btn active" data-value="fit">画像に合わせる</button>
+            <button class="opt-btn" data-value="a4">A4</button>
+            <button class="opt-btn" data-value="letter">レター</button>
+          </div>
+        </div>
+
+        <div class="option-group">
+          <label class="option-label">余白</label>
+          <div class="option-buttons" id="opt-margin">
+            <button class="opt-btn active" data-value="none">なし</button>
+            <button class="opt-btn" data-value="small">小</button>
+            <button class="opt-btn" data-value="large">大</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="convert-row">
+        <button class="btn-convert" id="convert-btn">PDFに変換</button>
+      </div>
+
+      <div id="status" class="status hidden"></div>
+    </section>
+  </main>
+
+  <footer>
+    <p>データはブラウザ内のみで処理されます &mdash; サーバーへの送信なし</p>
+  </footer>
+
+  <script src="libs/Sortable.min.js"></script>
+  <script src="libs/pdf-lib.min.js"></script>
+  <script src="main.js"></script>
+</body>
+</html>
