@@ -102,21 +102,29 @@
   });
 
   // Render text to canvas (for Japanese support)
-  function renderTextToCanvas(text, size, color) {
-    const padding = 20;
+  async function textToImageBytes(text, size, color) {
     const canvas = document.createElement('canvas');
     const ctx = canvas.getContext('2d');
 
-    canvas.width = 800;
-    canvas.height = 200;
+    ctx.font = `bold ${size}px sans-serif`;
+    const metrics = ctx.measureText(text);
+    const width = Math.ceil(metrics.width + 40);
+    const height = Math.ceil(size + 20);
+
+    canvas.width = width;
+    canvas.height = height;
 
     ctx.font = `bold ${size}px sans-serif`;
     ctx.fillStyle = color;
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
-    ctx.fillText(text, canvas.width / 2, canvas.height / 2);
+    ctx.fillText(text, width / 2, height / 2);
 
-    return canvas;
+    return new Promise(resolve => {
+      canvas.toBlob(blob => {
+        blob.arrayBuffer().then(buf => resolve(new Uint8Array(buf)));
+      }, 'image/png');
+    });
   }
 
   // ── Apply watermark ──
@@ -145,43 +153,48 @@
         const angle = parseInt(angleInput.value) || 45;
         const color = colorInput.value || '#000000';
 
-        const canvas = renderTextToCanvas(text, size, color);
-        canvas.toBlob(async blob => {
-          const textBytes = await blob.arrayBuffer();
-          const textImg = await outPdf.embedPng(new Uint8Array(textBytes));
+        try {
+          const textBytes = await textToImageBytes(text, size, color);
+          const textImg = await outPdf.embedPng(textBytes);
 
+          // Batch all page copies first, then add watermarks
+          const copiedPages = [];
           for (const page of pages) {
             const copied = await outPdf.copyPage(pdfDoc, pdfDoc.getPageIndex(page));
             outPdf.addPage(copied);
-            const lastPage = outPdf.getPages()[outPdf.getPageCount() - 1];
+            copiedPages.push(outPdf.getPages()[outPdf.getPageCount() - 1]);
+          }
+
+          // Now add watermarks to all pages
+          for (const lastPage of copiedPages) {
             const { width, height } = lastPage.getSize();
 
             let x, y;
             switch (position) {
               case 'center':
-                x = width / 2 - 100;
-                y = height / 2 - 50;
+                x = width / 2 - (textImg.width / 2);
+                y = height / 2 - (textImg.height / 2);
                 break;
               case 'bottom-right':
-                x = width - 250;
+                x = width - textImg.width - 20;
                 y = 20;
                 break;
               default:
-                x = width / 2 - 100;
-                y = height / 2 - 50;
+                x = width / 2 - (textImg.width / 2);
+                y = height / 2 - (textImg.height / 2);
             }
 
             lastPage.drawImage(textImg, {
               x, y,
-              width: 200,
-              height: 100,
               opacity,
               rotate: angle,
             });
           }
 
           finalizePdf(outPdf, pageCount);
-        });
+        } catch (err) {
+          throw err;
+        }
       } else if (mode === 'image') {
         // Image watermark
         if (!watermarkImage) {
@@ -203,10 +216,16 @@
         const { width: imgW, height: imgH } = imgEmbed;
         const ratio = imgW / imgH;
 
+        // Batch all page copies first
+        const copiedPages = [];
         for (const page of pages) {
           const copied = await outPdf.copyPage(pdfDoc, pdfDoc.getPageIndex(page));
           outPdf.addPage(copied);
-          const lastPage = outPdf.getPages()[outPdf.getPageCount() - 1];
+          copiedPages.push(outPdf.getPages()[outPdf.getPageCount() - 1]);
+        }
+
+        // Now add watermarks to all pages
+        for (const lastPage of copiedPages) {
           const { width, height } = lastPage.getSize();
 
           const wmWidth = (width * sizePercent) / 100;
