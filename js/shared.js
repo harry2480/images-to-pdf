@@ -48,6 +48,37 @@ window.PdfApp = (() => {
     });
   }
 
+  // ── Theme (dark mode) ──
+  function initTheme() {
+    const saved = localStorage.getItem('theme');
+    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+    const isDark = saved === 'dark' || (!saved && prefersDark);
+    applyTheme(isDark);
+  }
+
+  function applyTheme(isDark) {
+    if (isDark) {
+      document.documentElement.setAttribute('data-theme', 'dark');
+      localStorage.setItem('theme', 'dark');
+    } else {
+      document.documentElement.setAttribute('data-theme', 'light');
+      localStorage.setItem('theme', 'light');
+    }
+    updateThemeIcon(isDark);
+  }
+
+  function updateThemeIcon(isDark) {
+    const moonIcon = document.getElementById('theme-icon-moon');
+    const sunIcon = document.getElementById('theme-icon-sun');
+    if (isDark) {
+      moonIcon?.classList.add('hidden');
+      sunIcon?.classList.remove('hidden');
+    } else {
+      moonIcon?.classList.remove('hidden');
+      sunIcon?.classList.add('hidden');
+    }
+  }
+
   // ── PDF layout ──
   function calcLayout(image, options, marginPt) {
     const landscape = options.orientation === 'landscape';
@@ -274,7 +305,17 @@ window.PdfApp = (() => {
 
   // Wire up shared init once the DOM is ready (scripts load at end of body).
   initOptionButtons();
+  initTheme();
   initNav('jpg-to-pdf');
+
+  // Theme toggle button listener
+  const themeToggle = document.getElementById('theme-toggle');
+  if (themeToggle) {
+    themeToggle.addEventListener('click', () => {
+      const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+      applyTheme(!isDark);
+    });
+  }
 
   return {
     PDFDocument,
