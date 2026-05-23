@@ -16,6 +16,7 @@
 
   <nav id="tool-nav" class="tool-nav">
     <button class="tool-nav-btn" data-tool="jpg-to-pdf">画像 → PDF</button>
+    <button class="tool-nav-btn" data-tool="pdf-to-jpg">PDF → 画像</button>
     <button class="tool-nav-btn" data-tool="merge-pdf">PDF結合</button>
   </nav>
 
@@ -142,6 +143,58 @@
         <div id="merge-status" class="status hidden"></div>
       </div>
     </section>
+
+    <!-- ════════ PDF → 画像 ════════ -->
+    <section data-tool="pdf-to-jpg" class="hidden">
+      <div id="p2j-drop-zone" class="drop-zone">
+        <input type="file" id="p2j-file-input" accept="application/pdf" hidden>
+        <div class="drop-zone-inner">
+          <svg class="drop-icon" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <rect x="10" y="8" width="34" height="42" rx="3" stroke="currentColor" stroke-width="3"/>
+            <path d="M44 8l10 10H44V8z" stroke="currentColor" stroke-width="3" stroke-linejoin="round"/>
+            <path d="M20 40l7-8 5 6 4-4 6 6" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          <p class="drop-text">ここにPDFをドロップ</p>
+          <p class="drop-subtext">または</p>
+          <button class="btn-select" id="p2j-select-btn">ファイルを選択</button>
+          <p class="drop-hint">各ページを画像（JPG/PNG）に変換します</p>
+        </div>
+      </div>
+
+      <div id="p2j-workspace" class="workspace hidden">
+        <div id="p2j-info" class="p2j-info"></div>
+
+        <div class="options-panel">
+          <div class="option-group">
+            <label class="option-label">解像度</label>
+            <div class="option-buttons" data-opt="scale">
+              <button class="opt-btn active" data-value="1.5">標準</button>
+              <button class="opt-btn" data-value="2">高</button>
+              <button class="opt-btn" data-value="3">最高</button>
+            </div>
+          </div>
+
+          <div class="option-group">
+            <label class="option-label">形式</label>
+            <div class="option-buttons" data-opt="format">
+              <button class="opt-btn active" data-value="jpeg">JPG</button>
+              <button class="opt-btn" data-value="png">PNG</button>
+            </div>
+          </div>
+
+          <div class="option-group">
+            <label class="option-label">ページ範囲</label>
+            <input type="text" id="p2j-range" class="text-input" placeholder="例: 1-3,5（空欄で全ページ）">
+          </div>
+        </div>
+
+        <div class="convert-row">
+          <button class="btn-convert" id="p2j-convert">画像に変換</button>
+        </div>
+
+        <div id="p2j-status" class="status hidden"></div>
+      </div>
+    </section>
   </main>
 
   <footer>
@@ -170,8 +223,11 @@
   <script src="libs/Sortable.min.js"></script>
   <script src="libs/pdf-lib.min.js"></script>
   <script src="libs/UTIF.min.js"></script>
+  <script src="libs/pdf.min.js"></script>
+  <script src="libs/fflate.min.js"></script>
   <script src="js/shared.js"></script>
   <script src="js/jpg-to-pdf.js"></script>
   <script src="js/merge-pdf.js"></script>
+  <script src="js/pdf-to-jpg.js"></script>
 </body>
 </html>
