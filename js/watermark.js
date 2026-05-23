@@ -157,13 +157,10 @@
           const textBytes = await textToImageBytes(text, size, color);
           const textImg = await outPdf.embedPng(textBytes);
 
-          // Batch all page copies first, then add watermarks
-          const copiedPages = [];
-          for (let i = 0; i < pageCount; i++) {
-            const copied = await outPdf.copyPage(pdfDoc, i);
-            outPdf.addPage(copied);
-            copiedPages.push(outPdf.getPages()[outPdf.getPageCount() - 1]);
-          }
+          // Batch all page copies at once, then add watermarks
+          const indices = Array.from({ length: pageCount }, (_, i) => i);
+          const copiedPages = await outPdf.copyPages(pdfDoc, indices);
+          copiedPages.forEach(p => outPdf.addPage(p));
 
           // Now add watermarks to all pages
           for (const lastPage of copiedPages) {
@@ -216,13 +213,10 @@
         const { width: imgW, height: imgH } = imgEmbed;
         const ratio = imgW / imgH;
 
-        // Batch all page copies first
-        const copiedPages = [];
-        for (let i = 0; i < pageCount; i++) {
-          const copied = await outPdf.copyPage(pdfDoc, i);
-          outPdf.addPage(copied);
-          copiedPages.push(outPdf.getPages()[outPdf.getPageCount() - 1]);
-        }
+        // Batch all page copies at once
+        const indices = Array.from({ length: pageCount }, (_, i) => i);
+        const copiedPages = await outPdf.copyPages(pdfDoc, indices);
+        copiedPages.forEach(p => outPdf.addPage(p));
 
         // Now add watermarks to all pages
         for (const lastPage of copiedPages) {
