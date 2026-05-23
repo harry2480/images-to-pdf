@@ -88,32 +88,71 @@ window.PdfApp = (() => {
     return imageViaCanvas(file, rotation, qualityVal);
   }
 
-  function imageViaCanvas(file, rotation, qualityVal) {
+  function isTiff(file) {
+    return file.type === 'image/tiff' || /\.tiff?$/i.test(file.name);
+  }
+
+  // Decode a TIFF (first page) to a canvas via UTIF.
+  async function tiffToCanvas(file) {
+    if (typeof UTIF === 'undefined') throw new Error('TIFFデコーダ未読み込み');
+    const buf = await file.arrayBuffer();
+    const ifds = UTIF.decode(buf);
+    if (!ifds.length) throw new Error('TIFFを読み込めませんでした');
+    UTIF.decodeImage(buf, ifds[0]);
+    const rgba = UTIF.toRGBA8(ifds[0]);
+    const { width, height } = ifds[0];
+    const canvas = document.createElement('canvas');
+    canvas.width = width;
+    canvas.height = height;
+    canvas.getContext('2d').putImageData(new ImageData(new Uint8ClampedArray(rgba.buffer), width, height), 0, 0);
+    return canvas;
+  }
+
+  // Resolve a file to something drawable on a canvas (HTMLImageElement or canvas).
+  // TIFF goes through UTIF; everything else through the native image decoder.
+  function loadDrawable(file) {
+    if (isTiff(file)) {
+      return tiffToCanvas(file).then(c => ({ drawable: c, w: c.width, h: c.height }));
+    }
     return new Promise((resolve, reject) => {
       const url = URL.createObjectURL(file);
       const img = new Image();
-      img.onload = () => {
-        const rotated90 = rotation === 90 || rotation === 270;
-        const canvas = document.createElement('canvas');
-        canvas.width  = rotated90 ? img.naturalHeight : img.naturalWidth;
-        canvas.height = rotated90 ? img.naturalWidth  : img.naturalHeight;
-        const ctx = canvas.getContext('2d');
-        ctx.translate(canvas.width / 2, canvas.height / 2);
-        ctx.rotate((rotation * Math.PI) / 180);
-        ctx.drawImage(img, -img.naturalWidth / 2, -img.naturalHeight / 2);
-        URL.revokeObjectURL(url);
-        // PNG keeps transparency; everything else (incl. GIF/BMP/WebP) → JPEG.
-        const outType = file.type === 'image/png' ? 'image/png' : 'image/jpeg';
-        const q = file.type === 'image/png' ? undefined : qualityVal;
-        canvas.toBlob(blob => {
-          if (!blob) { reject(new Error('変換失敗')); return; }
-          blob.arrayBuffer()
-            .then(bytes => resolve({ bytes, isJpeg: outType === 'image/jpeg' }))
-            .catch(reject);
-        }, outType, q);
-      };
+      img.onload = () => { URL.revokeObjectURL(url); resolve({ drawable: img, w: img.naturalWidth, h: img.naturalHeight }); };
       img.onerror = () => { URL.revokeObjectURL(url); reject(new Error('画像読み込み失敗')); };
       img.src = url;
+    });
+  }
+
+  // Decode → (rotate) → re-encode to JPEG/PNG bytes for pdf-lib embedding.
+  async function imageViaCanvas(file, rotation, qualityVal) {
+    const { drawable, w, h } = await loadDrawable(file);
+    const rotated90 = rotation === 90 || rotation === 270;
+    const canvas = document.createElement('canvas');
+    canvas.width  = rotated90 ? h : w;
+    canvas.height = rotated90 ? w : h;
+    const ctx = canvas.getContext('2d');
+    ctx.translate(canvas.width / 2, canvas.height / 2);
+    ctx.rotate((rotation * Math.PI) / 180);
+    ctx.drawImage(drawable, -w / 2, -h / 2);
+    // PNG keeps transparency; everything else (incl. GIF/BMP/WebP/TIFF) → JPEG.
+    const outType = file.type === 'image/png' ? 'image/png' : 'image/jpeg';
+    const q = file.type === 'image/png' ? undefined : qualityVal;
+    const blob = await new Promise(res => canvas.toBlob(res, outType, q));
+    if (!blob) throw new Error('変換失敗');
+    return { bytes: await blob.arrayBuffer(), isJpeg: outType === 'image/jpeg' };
+  }
+
+  // Thumbnail data URL for the card grid. TIFF can't be shown via <img> directly.
+  async function makeThumbnail(file) {
+    if (isTiff(file)) {
+      const c = await tiffToCanvas(file);
+      return c.toDataURL('image/jpeg', 0.7);
+    }
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = e => resolve(e.target.result);
+      reader.onerror = () => reject(new Error('読み込み失敗'));
+      reader.readAsDataURL(file);
     });
   }
 
@@ -200,6 +239,7 @@ window.PdfApp = (() => {
     PDFDocument,
     MM_TO_PT, PAGE_SIZES, MARGIN_PT, QUALITY_MAP, MAX_FILES, MAX_TOTAL_BYTES,
     formatBytes, getOptions, calcLayout, processImageFile, imageViaCanvas,
+    isTiff, makeThumbnail,
     downloadBlob, downloadPDF, showStatus, hideStatus, openPreview, closeModal,
     showTool,
   };

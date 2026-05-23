@@ -23,7 +23,7 @@
     <!-- ════════ 画像 → PDF ════════ -->
     <section data-tool="jpg-to-pdf">
       <div id="drop-zone" class="drop-zone">
-        <input type="file" id="file-input" multiple accept="image/jpeg,image/png,image/webp,image/gif,image/bmp" hidden>
+        <input type="file" id="file-input" multiple accept="image/jpeg,image/png,image/webp,image/gif,image/bmp,image/tiff,.tif,.tiff" hidden>
         <div class="drop-zone-inner">
           <svg class="drop-icon" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
             <rect x="8" y="12" width="34" height="42" rx="3" stroke="currentColor" stroke-width="3"/>
@@ -34,7 +34,7 @@
           <p class="drop-text">ここに画像をドロップ</p>
           <p class="drop-subtext">または</p>
           <button class="btn-select" id="select-btn">ファイルを選択</button>
-          <p class="drop-hint">JPG・PNG・WebP・GIF・BMP 対応</p>
+          <p class="drop-hint">JPG・PNG・WebP・GIF・BMP・TIFF 対応</p>
         </div>
       </div>
 
@@ -169,6 +169,7 @@
 
   <script src="libs/Sortable.min.js"></script>
   <script src="libs/pdf-lib.min.js"></script>
+  <script src="libs/UTIF.min.js"></script>
   <script src="js/shared.js"></script>
   <script src="js/jpg-to-pdf.js"></script>
   <script src="js/merge-pdf.js"></script>

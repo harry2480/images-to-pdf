@@ -3,11 +3,14 @@
   const {
     PDFDocument, MARGIN_PT, QUALITY_MAP, MAX_FILES, MAX_TOTAL_BYTES,
     calcLayout, processImageFile, getOptions, downloadPDF, formatBytes,
-    showStatus, hideStatus, openPreview,
+    showStatus, hideStatus, openPreview, isTiff, makeThumbnail,
   } = PdfApp;
   const { StandardFonts, rgb } = PDFLib;
 
-  const ALLOWED = ['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'image/bmp'];
+  const ALLOWED = ['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'image/bmp', 'image/tiff'];
+  function isAllowed(file) {
+    return ALLOWED.includes(file.type) || isTiff(file); // some TIFFs report empty MIME
+  }
 
   // ── State ──
   let files = []; // { id, file, rotation }
@@ -69,7 +72,7 @@
 
   // ── Add files ──
   function addFiles(fileList_) {
-    const incoming = Array.from(fileList_).filter(f => ALLOWED.includes(f.type));
+    const incoming = Array.from(fileList_).filter(isAllowed);
     let total = files.reduce((s, e) => s + e.file.size, 0);
     let skipped = 0;
 
@@ -108,9 +111,7 @@
     thumb.className = 'file-card-thumb';
     thumb.alt = file.name;
     if (rotation) thumb.style.transform = `rotate(${rotation}deg)`;
-    const reader = new FileReader();
-    reader.onload = e => { thumb.src = e.target.result; };
-    reader.readAsDataURL(file);
+    makeThumbnail(file).then(url => { thumb.src = url; }).catch(() => {});
     thumbWrap.appendChild(thumb);
 
     const num = document.createElement('span');
