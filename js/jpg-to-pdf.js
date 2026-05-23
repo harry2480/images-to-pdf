@@ -3,11 +3,15 @@
   const {
     PDFDocument, MARGIN_PT, QUALITY_MAP, MAX_FILES, MAX_TOTAL_BYTES,
     calcLayout, processImageFile, getOptions, downloadPDF, formatBytes,
-    showStatus, hideStatus, openPreview,
+    showStatus, hideStatus, openPreview, isTiff, isHeic, makeThumbnail, openCropEditor,
   } = PdfApp;
   const { StandardFonts, rgb } = PDFLib;
 
-  const ALLOWED = ['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'image/bmp'];
+  const ALLOWED = ['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'image/bmp', 'image/tiff'];
+  function isAllowed(file) {
+    // TIFF/HEIC often report empty MIME → also accept by extension.
+    return ALLOWED.includes(file.type) || isTiff(file) || isHeic(file);
+  }
 
   // ── State ──
   let files = []; // { id, file, rotation }
@@ -69,7 +73,7 @@
 
   // ── Add files ──
   function addFiles(fileList_) {
-    const incoming = Array.from(fileList_).filter(f => ALLOWED.includes(f.type));
+    const incoming = Array.from(fileList_).filter(isAllowed);
     let total = files.reduce((s, e) => s + e.file.size, 0);
     let skipped = 0;
 
@@ -84,6 +88,10 @@
 
     if (files.length > 0) showWorkspace();
     updateNumbers();
+    if (incoming.some(isHeic)) {
+      showStatus(statusEl, 'success', 'HEIC を変換中です…（初回は読み込みに時間がかかります）');
+      setTimeout(() => { if (statusEl.textContent.startsWith('HEIC')) hideStatus(statusEl); }, 6000);
+    }
     if (skipped > 0) {
       showStatus(statusEl, 'error',
         `上限（${MAX_FILES}枚 / ${formatBytes(MAX_TOTAL_BYTES)}）を超えるため ${skipped} 件を追加できませんでした`);
@@ -104,13 +112,15 @@
     const thumbWrap = document.createElement('div');
     thumbWrap.className = 'file-card-thumb-wrap';
 
+    const live = files.find(f => f.id === id);
+    const thumbSrc = (live && live.editedBlob) || file;
+    if (live && live.editedBlob) card.classList.add('edited');
+
     const thumb = document.createElement('img');
     thumb.className = 'file-card-thumb';
     thumb.alt = file.name;
     if (rotation) thumb.style.transform = `rotate(${rotation}deg)`;
-    const reader = new FileReader();
-    reader.onload = e => { thumb.src = e.target.result; };
-    reader.readAsDataURL(file);
+    makeThumbnail(thumbSrc).then(url => { thumb.src = url; }).catch(() => {});
     thumbWrap.appendChild(thumb);
 
     const num = document.createElement('span');
@@ -145,8 +155,24 @@
     rotR.textContent = '↻';
     rotR.addEventListener('click', e => { e.stopPropagation(); rotateCard(id, 90); });
 
+    const cropBtn = document.createElement('button');
+    cropBtn.className = 'btn-rotate';
+    cropBtn.title = '編集（クロップ）';
+    cropBtn.textContent = '✂';
+    cropBtn.addEventListener('click', e => {
+      e.stopPropagation();
+      const entry = files.find(f => f.id === id);
+      if (!entry) return;
+      openCropEditor(entry.editedBlob || entry.file, blob => {
+        entry.editedBlob = blob;
+        makeThumbnail(blob).then(u => { thumb.src = u; }).catch(() => {});
+        card.classList.add('edited');
+      });
+    });
+
     actions.appendChild(rotL);
     actions.appendChild(rotR);
+    actions.appendChild(cropBtn);
     footer.appendChild(name);
     footer.appendChild(actions);
 
@@ -230,7 +256,8 @@
 
     let i = 0;
     for (const entry of fileEntries) {
-      const { bytes, isJpeg } = await processImageFile(entry, qualityVal);
+      const source = entry.editedBlob || entry.file;
+      const { bytes, isJpeg } = await processImageFile({ file: source, rotation: entry.rotation }, qualityVal);
       const image = isJpeg ? await pdfDoc.embedJpg(bytes) : await pdfDoc.embedPng(bytes);
 
       const layout = calcLayout(image, options, marginPt);

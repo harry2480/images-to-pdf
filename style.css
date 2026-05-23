@@ -363,6 +363,32 @@ main {
   color: var(--accent);
 }
 
+/* ── PDF → 画像 ── */
+.p2j-info {
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 14px 18px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.text-input {
+  border: 1.5px solid var(--border);
+  border-radius: 7px;
+  padding: 8px 12px;
+  font-size: 0.85rem;
+  color: var(--text);
+  font-family: inherit;
+  width: 100%;
+}
+
+.text-input:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
 /* ── Options Panel ── */
 .options-panel {
   background: var(--card-bg);
@@ -684,6 +710,65 @@ main {
 
 .btn-modal-download:hover {
   background: var(--accent-hover);
+}
+
+/* ── Crop Editor ── */
+.crop-body {
+  background: #2a2a2a;
+  padding: 0;
+}
+
+#crop-img {
+  display: block;
+  max-width: 100%;
+  /* Cropper.js replaces this element with its own container */
+}
+
+.crop-body .cropper-container {
+  margin: 0 auto;
+}
+
+.crop-footer {
+  flex-wrap: wrap;
+}
+
+.crop-tools {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-right: auto;
+  flex-wrap: wrap;
+}
+
+.crop-tools .btn-rotate {
+  flex: 0 0 auto;
+  width: 36px;
+  font-size: 1.05rem;
+}
+
+.crop-aspects {
+  margin-left: 6px;
+}
+
+/* edited-image badge on cards */
+.file-card.edited .file-card-thumb-wrap::after {
+  content: '✂';
+  position: absolute;
+  bottom: 6px;
+  right: 6px;
+  background: var(--accent);
+  color: #fff;
+  font-size: 0.7rem;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.file-card .file-card-thumb-wrap {
+  position: relative;
 }
 
 /* ── Footer ── */

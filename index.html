@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>PDFツール — 画像→PDF・PDF結合</title>
+  <link rel="stylesheet" href="libs/cropper.min.css">
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -16,14 +17,16 @@
 
   <nav id="tool-nav" class="tool-nav">
     <button class="tool-nav-btn" data-tool="jpg-to-pdf">画像 → PDF</button>
+    <button class="tool-nav-btn" data-tool="pdf-to-jpg">PDF → 画像</button>
     <button class="tool-nav-btn" data-tool="merge-pdf">PDF結合</button>
+    <button class="tool-nav-btn" data-tool="compress-pdf">PDF圧縮</button>
   </nav>
 
   <main>
     <!-- ════════ 画像 → PDF ════════ -->
     <section data-tool="jpg-to-pdf">
       <div id="drop-zone" class="drop-zone">
-        <input type="file" id="file-input" multiple accept="image/jpeg,image/png,image/webp,image/gif,image/bmp" hidden>
+        <input type="file" id="file-input" multiple accept="image/jpeg,image/png,image/webp,image/gif,image/bmp,image/tiff,image/heic,image/heif,.tif,.tiff,.heic,.heif" hidden>
         <div class="drop-zone-inner">
           <svg class="drop-icon" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
             <rect x="8" y="12" width="34" height="42" rx="3" stroke="currentColor" stroke-width="3"/>
@@ -34,7 +37,7 @@
           <p class="drop-text">ここに画像をドロップ</p>
           <p class="drop-subtext">または</p>
           <button class="btn-select" id="select-btn">ファイルを選択</button>
-          <p class="drop-hint">JPG・PNG・WebP・GIF・BMP 対応</p>
+          <p class="drop-hint">JPG・PNG・WebP・GIF・BMP・TIFF・HEIC 対応</p>
         </div>
       </div>
 
@@ -142,6 +145,97 @@
         <div id="merge-status" class="status hidden"></div>
       </div>
     </section>
+
+    <!-- ════════ PDF → 画像 ════════ -->
+    <section data-tool="pdf-to-jpg" class="hidden">
+      <div id="p2j-drop-zone" class="drop-zone">
+        <input type="file" id="p2j-file-input" accept="application/pdf" hidden>
+        <div class="drop-zone-inner">
+          <svg class="drop-icon" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <rect x="10" y="8" width="34" height="42" rx="3" stroke="currentColor" stroke-width="3"/>
+            <path d="M44 8l10 10H44V8z" stroke="currentColor" stroke-width="3" stroke-linejoin="round"/>
+            <path d="M20 40l7-8 5 6 4-4 6 6" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          <p class="drop-text">ここにPDFをドロップ</p>
+          <p class="drop-subtext">または</p>
+          <button class="btn-select" id="p2j-select-btn">ファイルを選択</button>
+          <p class="drop-hint">各ページを画像（JPG/PNG）に変換します</p>
+        </div>
+      </div>
+
+      <div id="p2j-workspace" class="workspace hidden">
+        <div id="p2j-info" class="p2j-info"></div>
+
+        <div class="options-panel">
+          <div class="option-group">
+            <label class="option-label">解像度</label>
+            <div class="option-buttons" data-opt="scale">
+              <button class="opt-btn active" data-value="1.5">標準</button>
+              <button class="opt-btn" data-value="2">高</button>
+              <button class="opt-btn" data-value="3">最高</button>
+            </div>
+          </div>
+
+          <div class="option-group">
+            <label class="option-label">形式</label>
+            <div class="option-buttons" data-opt="format">
+              <button class="opt-btn active" data-value="jpeg">JPG</button>
+              <button class="opt-btn" data-value="png">PNG</button>
+            </div>
+          </div>
+
+          <div class="option-group">
+            <label class="option-label">ページ範囲</label>
+            <input type="text" id="p2j-range" class="text-input" placeholder="例: 1-3,5（空欄で全ページ）">
+          </div>
+        </div>
+
+        <div class="convert-row">
+          <button class="btn-convert" id="p2j-convert">画像に変換</button>
+        </div>
+
+        <div id="p2j-status" class="status hidden"></div>
+      </div>
+    </section>
+
+    <!-- ════════ PDF圧縮 ════════ -->
+    <section data-tool="compress-pdf" class="hidden">
+      <div id="cmp-drop-zone" class="drop-zone">
+        <input type="file" id="cmp-file-input" accept="application/pdf" hidden>
+        <div class="drop-zone-inner">
+          <svg class="drop-icon" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <rect x="14" y="8" width="36" height="48" rx="3" stroke="currentColor" stroke-width="3"/>
+            <path d="M26 30l6 6 6-6M32 36V20" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          <p class="drop-text">ここにPDFをドロップ</p>
+          <p class="drop-subtext">または</p>
+          <button class="btn-select" id="cmp-select-btn">ファイルを選択</button>
+          <p class="drop-hint">画像PDF（スキャン等）のファイルサイズを縮小します</p>
+        </div>
+      </div>
+
+      <div id="cmp-workspace" class="workspace hidden">
+        <div id="cmp-info" class="p2j-info"></div>
+        <div id="cmp-warning" class="status error hidden"></div>
+
+        <div class="options-panel">
+          <div class="option-group">
+            <label class="option-label">圧縮率</label>
+            <div class="option-buttons" data-opt="level">
+              <button class="opt-btn" data-value="strong">強（小さい）</button>
+              <button class="opt-btn active" data-value="medium">中</button>
+              <button class="opt-btn" data-value="light">弱（高画質）</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="convert-row">
+          <button class="btn-convert" id="cmp-btn">圧縮する</button>
+        </div>
+
+        <div id="cmp-status" class="status hidden"></div>
+      </div>
+    </section>
   </main>
 
   <footer>
@@ -167,10 +261,46 @@
     </div>
   </div>
 
+  <!-- Crop Editor Modal -->
+  <div id="crop-modal" class="modal hidden">
+    <div class="modal-overlay" id="crop-overlay"></div>
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <h2 class="modal-title">画像を編集</h2>
+        <button class="modal-close" id="crop-close">×</button>
+      </div>
+      <div class="modal-body crop-body">
+        <img id="crop-img" alt="編集中の画像">
+      </div>
+      <div class="modal-footer crop-footer">
+        <div class="crop-tools">
+          <button class="btn-rotate" id="crop-rotate-l" title="左に回転">↺</button>
+          <button class="btn-rotate" id="crop-rotate-r" title="右に回転">↻</button>
+          <button class="btn-rotate" id="crop-reset" title="リセット">⟲</button>
+          <div class="option-buttons crop-aspects" id="crop-aspects">
+            <button class="opt-btn active" data-value="free">自由</button>
+            <button class="opt-btn" data-value="1">1:1</button>
+            <button class="opt-btn" data-value="1.3333">4:3</button>
+            <button class="opt-btn" data-value="1.7778">16:9</button>
+          </div>
+        </div>
+        <button class="btn-modal-cancel" id="crop-cancel">キャンセル</button>
+        <button class="btn-modal-download" id="crop-apply">適用</button>
+      </div>
+    </div>
+  </div>
+
   <script src="libs/Sortable.min.js"></script>
   <script src="libs/pdf-lib.min.js"></script>
+  <script src="libs/UTIF.min.js"></script>
+  <script src="libs/pdf.min.js"></script>
+  <script src="libs/fflate.min.js"></script>
+  <script src="libs/cropper.min.js"></script>
   <script src="js/shared.js"></script>
+  <script src="js/editor.js"></script>
   <script src="js/jpg-to-pdf.js"></script>
   <script src="js/merge-pdf.js"></script>
+  <script src="js/pdf-to-jpg.js"></script>
+  <script src="js/compress-pdf.js"></script>
 </body>
 </html>
