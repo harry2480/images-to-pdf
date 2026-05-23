@@ -36,7 +36,35 @@ header {
 .header-inner {
   max-width: 860px;
   margin: 0 auto;
+}
+
+.header-content {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 24px;
+}
+
+.header-content > div {
+  flex: 1;
   text-align: center;
+}
+
+.github-link {
+  display: inline-block;
+  padding: 8px 16px;
+  background: var(--accent);
+  color: white;
+  text-decoration: none;
+  border-radius: 6px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  white-space: nowrap;
+  transition: background 0.2s;
+}
+
+.github-link:hover {
+  background: var(--accent-hover);
 }
 
 h1 {
