@@ -2,8 +2,22 @@
 (() => {
   const {
     MAX_TOTAL_BYTES, getOptions, downloadBlob, formatBytes,
-    showStatus, hideStatus, loadScript,
+    showStatus, hideStatus,
   } = PdfApp;
+
+  // Lazy <script> loader for Tesseract.js
+  const loadedScripts = {};
+  function loadScript(src) {
+    if (loadedScripts[src]) return loadedScripts[src];
+    loadedScripts[src] = new Promise((resolve, reject) => {
+      const s = document.createElement('script');
+      s.src = src;
+      s.onload = resolve;
+      s.onerror = () => reject(new Error(`読み込み失敗: ${src}`));
+      document.head.appendChild(s);
+    });
+    return loadedScripts[src];
+  }
 
   if (typeof pdfjsLib !== 'undefined') {
     pdfjsLib.GlobalWorkerOptions.workerSrc = 'libs/pdf.worker.min.js';
