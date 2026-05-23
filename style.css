@@ -812,6 +812,45 @@ footer {
   background: #fff;
 }
 
+/* ── OCR Result ── */
+.ocr-result-section {
+  margin-top: 24px;
+  padding: 16px;
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+
+.ocr-textarea {
+  width: 100%;
+  min-height: 200px;
+  padding: 12px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  font-family: 'Courier New', monospace;
+  font-size: 0.85rem;
+  color: var(--text);
+  background: var(--bg);
+  resize: vertical;
+}
+
+.btn-copy {
+  margin-top: 12px;
+  background: var(--accent);
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 9px 16px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.btn-copy:hover {
+  background: var(--accent-hover);
+}
+
 /* ── Hidden utility ── */
 .hidden {
   display: none !important;
@@ -835,5 +874,14 @@ footer {
   .btn-convert {
     width: 100%;
     padding: 14px;
+  }
+
+  .ocr-result-section {
+    padding: 12px;
+  }
+
+  .ocr-textarea {
+    min-height: 150px;
+    font-size: 0.8rem;
   }
 }
