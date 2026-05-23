@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>PDFツール — 画像→PDF・PDF結合</title>
+  <link rel="stylesheet" href="libs/cropper.min.css">
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -220,12 +221,43 @@
     </div>
   </div>
 
+  <!-- Crop Editor Modal -->
+  <div id="crop-modal" class="modal hidden">
+    <div class="modal-overlay" id="crop-overlay"></div>
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <h2 class="modal-title">画像を編集</h2>
+        <button class="modal-close" id="crop-close">×</button>
+      </div>
+      <div class="modal-body crop-body">
+        <img id="crop-img" alt="編集中の画像">
+      </div>
+      <div class="modal-footer crop-footer">
+        <div class="crop-tools">
+          <button class="btn-rotate" id="crop-rotate-l" title="左に回転">↺</button>
+          <button class="btn-rotate" id="crop-rotate-r" title="右に回転">↻</button>
+          <button class="btn-rotate" id="crop-reset" title="リセット">⟲</button>
+          <div class="option-buttons crop-aspects" id="crop-aspects">
+            <button class="opt-btn active" data-value="free">自由</button>
+            <button class="opt-btn" data-value="1">1:1</button>
+            <button class="opt-btn" data-value="1.3333">4:3</button>
+            <button class="opt-btn" data-value="1.7778">16:9</button>
+          </div>
+        </div>
+        <button class="btn-modal-cancel" id="crop-cancel">キャンセル</button>
+        <button class="btn-modal-download" id="crop-apply">適用</button>
+      </div>
+    </div>
+  </div>
+
   <script src="libs/Sortable.min.js"></script>
   <script src="libs/pdf-lib.min.js"></script>
   <script src="libs/UTIF.min.js"></script>
   <script src="libs/pdf.min.js"></script>
   <script src="libs/fflate.min.js"></script>
+  <script src="libs/cropper.min.js"></script>
   <script src="js/shared.js"></script>
+  <script src="js/editor.js"></script>
   <script src="js/jpg-to-pdf.js"></script>
   <script src="js/merge-pdf.js"></script>
   <script src="js/pdf-to-jpg.js"></script>
