@@ -1,0 +1,13 @@
+{
+  "name": "images-to-pdf",
+  "version": "1.0.0",
+  "type": "module",
+  "description": "Browser-based PDF processing tool with privacy-first approach",
+  "scripts": {
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "devDependencies": {
+    "vitest": "^2.0.0"
+  }
+}
