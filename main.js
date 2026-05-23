@@ -164,7 +164,9 @@
 
     try {
       const pdfBytes = await generatePDF(ordered.map(o => o.file), getOptions());
-      downloadPDF(pdfBytes);
+      const firstName = ordered[0].file.name.replace(/\.[^.]+$/, '');
+      const outName = ordered.length === 1 ? `${firstName}.pdf` : `${firstName}_and_${ordered.length - 1}_more.pdf`;
+      downloadPDF(pdfBytes, outName);
       showStatus('success', `PDF を生成しました（${ordered.length} 枚）`);
     } catch (err) {
       console.error(err);
@@ -257,12 +259,12 @@
   }
 
   // ── Download ──
-  function downloadPDF(pdfBytes) {
+  function downloadPDF(pdfBytes, filename) {
     const blob = new Blob([pdfBytes], { type: 'application/pdf' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = 'converted.pdf';
+    a.download = filename;
     a.click();
     setTimeout(() => URL.revokeObjectURL(url), 10000);
   }
