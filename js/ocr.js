@@ -1,8 +1,8 @@
 // OCR: extract text from PDF or image using Tesseract.js
 (() => {
   const {
-    MAX_TOTAL_BYTES, getOptions, downloadBlob, formatBytes,
-    showStatus, hideStatus,
+    getOptions, downloadBlob, formatBytes,
+    showStatus, hideStatus, showProgress, resetProgress,
   } = PdfApp;
 
   // Lazy <script> loader for Tesseract.js
@@ -40,6 +40,7 @@
   const pageInput      = document.getElementById('ocr-page');
   const extractBtn     = document.getElementById('ocr-btn');
   const statusEl       = document.getElementById('ocr-status');
+  const progressEl     = document.getElementById('ocr-progress');
   const resultArea     = document.getElementById('ocr-result');
   const copyBtn        = document.getElementById('ocr-copy-btn');
 
@@ -68,10 +69,6 @@
   async function loadFile(file) {
     if (!isSupported(file)) {
       showStatus(statusEl, 'error', 'PDF または画像ファイルを選択してください');
-      return;
-    }
-    if (file.size > MAX_TOTAL_BYTES) {
-      showStatus(statusEl, 'error', `上限（${formatBytes(MAX_TOTAL_BYTES)}）を超えています`);
       return;
     }
     hideStatus(statusEl);
@@ -185,15 +182,19 @@
     extractBtn.textContent = '抽出中';
     resultArea.value = '';
     hideStatus(statusEl);
+    resetProgress(progressEl);
 
     try {
       const results = [];
 
       if (fileData.type === 'pdf') {
+        let i = 0;
         for (const p of pages) {
           const canvas = await renderPageToCanvas(p);
           const text = await extractPageText(canvas, lang);
           results.push(`--- ページ ${p} ---\n${text}`);
+          i++;
+          showProgress(progressEl, (i / pages.length) * 100);
         }
       } else {
         // Image: load as <img> and extract
@@ -218,6 +219,7 @@
       extractBtn.disabled = false;
       extractBtn.classList.remove('loading');
       extractBtn.textContent = 'テキスト抽出';
+      resetProgress(progressEl);
     }
   });
 

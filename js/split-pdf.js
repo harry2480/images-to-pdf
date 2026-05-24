@@ -1,8 +1,8 @@
 // PDF split: split into individual pages or page ranges via pdf-lib.
 (() => {
   const {
-    PDFDocument, MAX_TOTAL_BYTES, getOptions, downloadBlob, downloadPDF, formatBytes,
-    showStatus, hideStatus,
+    PDFDocument, getOptions, downloadBlob, downloadPDF, formatBytes,
+    showStatus, hideStatus, showProgress, resetProgress,
   } = PdfApp;
 
   // ── State ──
@@ -21,6 +21,7 @@
   const modeButtons = root.querySelectorAll('.option-buttons[data-opt="mode"] .opt-btn');
   const splitBtn    = document.getElementById('spl-btn');
   const statusEl    = document.getElementById('spl-status');
+  const progressEl  = document.getElementById('spl-progress');
 
   // ── File input / drag-drop ──
   selectBtn.addEventListener('click', () => fileInput.click());
@@ -44,10 +45,6 @@
   async function loadPdf(file) {
     if (!isPdf(file)) {
       showStatus(statusEl, 'error', 'PDFファイルを選択してください');
-      return;
-    }
-    if (file.size > MAX_TOTAL_BYTES) {
-      showStatus(statusEl, 'error', `上限（${formatBytes(MAX_TOTAL_BYTES)}）を超えています`);
       return;
     }
     hideStatus(statusEl);
@@ -118,6 +115,7 @@
     splitBtn.classList.add('loading');
     splitBtn.textContent = '分割中';
     hideStatus(statusEl);
+    resetProgress(progressEl);
 
     try {
       const pad = String(numPages).length;
@@ -133,12 +131,15 @@
       } else {
         // Multiple pages: zip individual PDFs
         const pdfs = []; // { name, bytes }
+        let i = 0;
         for (const p of pages) {
           const outPdf = await PDFDocument.create();
           const [copied] = await outPdf.copyPages(pdfDoc, [p - 1]);
           outPdf.addPage(copied);
           const pdfBytes = await outPdf.save();
           pdfs.push({ name: `${base}-${String(p).padStart(pad, '0')}.pdf`, bytes: pdfBytes });
+          i++;
+          showProgress(progressEl, (i / pages.length) * 100);
         }
 
         // Zip PDFs
@@ -155,6 +156,7 @@
       splitBtn.disabled = false;
       splitBtn.classList.remove('loading');
       splitBtn.textContent = '分割する';
+      resetProgress(progressEl);
     }
   });
 })();

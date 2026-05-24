@@ -1,8 +1,8 @@
 // PDF → images (one per page) via pdf.js. Multi-page output is zipped with fflate.
 (() => {
   const {
-    MAX_TOTAL_BYTES, getOptions, downloadBlob, formatBytes,
-    showStatus, hideStatus,
+    getOptions, downloadBlob, formatBytes,
+    showStatus, hideStatus, showProgress, resetProgress,
   } = PdfApp;
 
   if (typeof pdfjsLib !== 'undefined') {
@@ -23,6 +23,7 @@
   const rangeInput = document.getElementById('p2j-range');
   const convertBtn = document.getElementById('p2j-convert');
   const statusEl   = document.getElementById('p2j-status');
+  const progressEl = document.getElementById('p2j-progress');
 
   // ── File input / drag-drop ──
   selectBtn.addEventListener('click', () => fileInput.click());
@@ -46,10 +47,6 @@
   async function loadPdf(file) {
     if (!isPdf(file)) {
       showStatus(statusEl, 'error', 'PDFファイルを選択してください');
-      return;
-    }
-    if (file.size > MAX_TOTAL_BYTES) {
-      showStatus(statusEl, 'error', `上限（${formatBytes(MAX_TOTAL_BYTES)}）を超えています`);
       return;
     }
     hideStatus(statusEl);
@@ -126,13 +123,17 @@
     convertBtn.classList.add('loading');
     convertBtn.textContent = '変換中';
     hideStatus(statusEl);
+    resetProgress(progressEl);
 
     try {
       const pad = String(pdfDoc.numPages).length;
       const images = []; // { name, bytes }
+      let i = 0;
       for (const p of pages) {
         const bytes = await renderPage(p, scale, type, quality);
         images.push({ name: `${base}-${String(p).padStart(pad, '0')}.${ext}`, bytes });
+        i++;
+        showProgress(progressEl, (i / pages.length) * 100);
       }
 
       if (images.length === 1) {
@@ -153,6 +154,7 @@
       convertBtn.disabled = false;
       convertBtn.classList.remove('loading');
       convertBtn.textContent = '画像に変換';
+      resetProgress(progressEl);
     }
   });
 })();

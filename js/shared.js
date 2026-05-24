@@ -251,6 +251,22 @@ window.PdfApp = (() => {
     el.className = 'status hidden';
   }
 
+  // ── Progress Bar ──
+  function showProgress(wrapEl, percent, label) {
+    wrapEl.classList.remove('hidden');
+    const fillEl = wrapEl.querySelector('.progress-fill');
+    const labelEl = wrapEl.querySelector('.progress-label');
+    if (fillEl) fillEl.style.width = percent + '%';
+    if (labelEl) labelEl.textContent = label || Math.round(percent) + '%';
+  }
+  function resetProgress(wrapEl) {
+    wrapEl.classList.add('hidden');
+    const fillEl = wrapEl.querySelector('.progress-fill');
+    const labelEl = wrapEl.querySelector('.progress-label');
+    if (fillEl) fillEl.style.width = '0%';
+    if (labelEl) labelEl.textContent = '0%';
+  }
+
   // ── Shared preview modal ──
   const previewModal  = document.getElementById('preview-modal');
   const previewIframe = document.getElementById('preview-iframe');
@@ -322,7 +338,7 @@ window.PdfApp = (() => {
     MM_TO_PT, PAGE_SIZES, MARGIN_PT, QUALITY_MAP, MAX_FILES, MAX_TOTAL_BYTES,
     formatBytes, getOptions, calcLayout, processImageFile, imageViaCanvas,
     isTiff, isHeic, makeThumbnail,
-    downloadBlob, downloadPDF, showStatus, hideStatus, openPreview, closeModal,
+    downloadBlob, downloadPDF, showStatus, hideStatus, showProgress, resetProgress, openPreview, closeModal,
     showTool,
   };
 })();

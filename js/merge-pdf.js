@@ -1,8 +1,8 @@
 // Merge multiple PDFs into one (pdf-lib copyPages).
 (() => {
   const {
-    PDFDocument, MAX_FILES, MAX_TOTAL_BYTES,
-    downloadPDF, formatBytes, showStatus, hideStatus, openPreview,
+    PDFDocument,
+    downloadPDF, formatBytes, showStatus, hideStatus, showProgress, resetProgress, openPreview,
   } = PdfApp;
 
   // ── State ──
@@ -20,6 +20,7 @@
   const mergeBtn   = document.getElementById('merge-btn');
   const previewBtn = document.getElementById('merge-preview-btn');
   const statusEl   = document.getElementById('merge-status');
+  const progressEl = document.getElementById('merge-progress');
 
   // ── SortableJS ──
   Sortable.create(fileList, {
@@ -54,23 +55,15 @@
 
   function addFiles(fileList_) {
     const incoming = Array.from(fileList_).filter(isPdf);
-    let total = files.reduce((s, e) => s + e.file.size, 0);
-    let skipped = 0;
 
     for (const file of incoming) {
-      if (files.length >= MAX_FILES || total + file.size > MAX_TOTAL_BYTES) { skipped++; continue; }
       const id = nextId++;
       files.push({ id, file });
       renderCard({ id, file });
-      total += file.size;
     }
 
     if (files.length > 0) showWorkspace();
     updateNumbers();
-    if (skipped > 0) {
-      showStatus(statusEl, 'error',
-        `上限（${MAX_FILES}件 / ${formatBytes(MAX_TOTAL_BYTES)}）を超えるため ${skipped} 件を追加できませんでした`);
-    }
   }
 
   function showWorkspace() {
@@ -141,10 +134,11 @@
   }
 
   // ── Merge ──
-  async function mergePDFs(ordered) {
+  async function mergePDFs(ordered, progressEl) {
     const out = await PDFDocument.create();
     const failed = [];
 
+    let i = 0;
     for (const entry of ordered) {
       try {
         const src = await PDFDocument.load(await entry.file.arrayBuffer());
@@ -155,6 +149,8 @@
         console.error(err);
         failed.push(entry.file.name);
       }
+      i++;
+      if (progressEl) showProgress(progressEl, (i / ordered.length) * 100);
     }
 
     if (out.getPageCount() === 0) {
@@ -186,9 +182,10 @@
     previewBtn.classList.add('loading');
     previewBtn.textContent = '生成中';
     hideStatus(statusEl);
+    resetProgress(progressEl);
 
     try {
-      const { bytes, failed } = await mergePDFs(ordered);
+      const { bytes, failed } = await mergePDFs(ordered, progressEl);
       lastPdfBytes = bytes;
       openPreview(bytes, () => downloadPDF(lastPdfBytes, mergedFilename(ordered)));
       warnIfFailed(failed);
@@ -199,6 +196,7 @@
       previewBtn.disabled = false;
       previewBtn.classList.remove('loading');
       previewBtn.textContent = 'プレビュー';
+      resetProgress(progressEl);
     }
   });
 
@@ -211,9 +209,10 @@
     mergeBtn.classList.add('loading');
     mergeBtn.textContent = '結合中';
     hideStatus(statusEl);
+    resetProgress(progressEl);
 
     try {
-      const { bytes, failed, pageCount } = await mergePDFs(ordered);
+      const { bytes, failed, pageCount } = await mergePDFs(ordered, progressEl);
       downloadPDF(bytes, mergedFilename(ordered));
       if (failed.length > 0) {
         warnIfFailed(failed);
@@ -228,6 +227,7 @@
       mergeBtn.disabled = false;
       mergeBtn.classList.remove('loading');
       mergeBtn.textContent = 'PDFを結合';
+      resetProgress(progressEl);
     }
   });
 })();

@@ -1,8 +1,8 @@
 // Watermark: add text or image watermark to PDF
 (() => {
   const {
-    PDFDocument, MAX_TOTAL_BYTES, getOptions, downloadPDF, formatBytes,
-    showStatus, hideStatus,
+    PDFDocument, getOptions, downloadPDF, formatBytes,
+    showStatus, hideStatus, showProgress, resetProgress,
   } = PdfApp;
   const { degrees } = PDFLib;
 
@@ -33,6 +33,7 @@
   const positionButtons   = root.querySelectorAll('.option-buttons[data-opt="position"] .opt-btn');
   const applyBtn          = document.getElementById('wm-btn');
   const statusEl          = document.getElementById('wm-status');
+  const progressEl        = document.getElementById('wm-progress');
 
   // ── File input / drag-drop ──
   selectBtn.addEventListener('click', () => fileInput.click());
@@ -56,10 +57,6 @@
   async function loadPdf(file) {
     if (!isPdf(file)) {
       showStatus(statusEl, 'error', 'PDFファイルを選択してください');
-      return;
-    }
-    if (file.size > MAX_TOTAL_BYTES) {
-      showStatus(statusEl, 'error', `上限（${formatBytes(MAX_TOTAL_BYTES)}）を超えています`);
       return;
     }
     hideStatus(statusEl);
@@ -141,6 +138,7 @@
     applyBtn.classList.add('loading');
     applyBtn.textContent = '処理中';
     hideStatus(statusEl);
+    resetProgress(progressEl);
 
     try {
       const outPdf = await PDFDocument.create();
@@ -164,6 +162,7 @@
           copiedPages.forEach(p => outPdf.addPage(p));
 
           // Now add watermarks to all pages
+          let i = 0;
           for (const lastPage of copiedPages) {
             const { width, height } = lastPage.getSize();
 
@@ -187,6 +186,8 @@
               opacity,
               rotate: degrees(angle),
             });
+            i++;
+            showProgress(progressEl, (i / pageCount) * 100);
           }
 
           finalizePdf(outPdf, pageCount);
@@ -220,6 +221,7 @@
         copiedPages.forEach(p => outPdf.addPage(p));
 
         // Now add watermarks to all pages
+        let i = 0;
         for (const lastPage of copiedPages) {
           const { width, height } = lastPage.getSize();
 
@@ -247,6 +249,8 @@
             height: wmHeight,
             opacity,
           });
+          i++;
+          showProgress(progressEl, (i / pageCount) * 100);
         }
 
         finalizePdf(outPdf, pageCount);
@@ -268,12 +272,14 @@
       applyBtn.disabled = false;
       applyBtn.classList.remove('loading');
       applyBtn.textContent = '透かしを追加';
+      resetProgress(progressEl);
     }).catch(err => {
       console.error(err);
       showStatus(statusEl, 'error', `PDF保存エラー: ${err.message}`);
       applyBtn.disabled = false;
       applyBtn.classList.remove('loading');
       applyBtn.textContent = '透かしを追加';
+      resetProgress(progressEl);
     });
   }
 })();
