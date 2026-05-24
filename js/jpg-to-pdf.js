@@ -3,7 +3,7 @@
   const {
     PDFDocument, MARGIN_PT, QUALITY_MAP,
     calcLayout, processImageFile, getOptions, downloadPDF, formatBytes,
-    showStatus, hideStatus, openPreview, isTiff, isHeic, makeThumbnail, openCropEditor,
+    showStatus, hideStatus, showProgress, resetProgress, openPreview, isTiff, isHeic, makeThumbnail, openCropEditor,
   } = PdfApp;
   const { StandardFonts, rgb } = PDFLib;
 
@@ -30,6 +30,7 @@
   const convertBtn  = document.getElementById('convert-btn');
   const previewBtn  = document.getElementById('preview-btn');
   const statusEl    = document.getElementById('status');
+  const progressEl  = document.getElementById('progress');
 
   // batch toolbar
   const batchRotate  = document.getElementById('batch-rotate');
@@ -238,7 +239,7 @@
   }
 
   // ── PDF generation ──
-  async function generatePDF(fileEntries, options) {
+  async function generatePDF(fileEntries, options, progressEl) {
     const pdfDoc     = await PDFDocument.create();
     const marginPt   = MARGIN_PT[options.margin]   ?? 0;
     const qualityVal = QUALITY_MAP[options.quality] ?? 0.92;
@@ -268,6 +269,7 @@
         page.drawText(label, { x, y: 14, size, font, color: rgb(0.4, 0.4, 0.4) });
       }
       i++;
+      if (progressEl) showProgress(progressEl, (i / fileEntries.length) * 100);
     }
 
     return pdfDoc.save();
@@ -289,9 +291,10 @@
     previewBtn.classList.add('loading');
     previewBtn.textContent = '生成中';
     hideStatus(statusEl);
+    resetProgress(progressEl);
 
     try {
-      const pdfBytes = await generatePDF(ordered, getOptions(root));
+      const pdfBytes = await generatePDF(ordered, getOptions(root), progressEl);
       lastPdfBytes = pdfBytes;
       lastOrderedFiles = ordered;
       openPreview(pdfBytes, () => downloadPDF(lastPdfBytes, generateFilename(lastOrderedFiles)));
@@ -302,6 +305,7 @@
       previewBtn.disabled = false;
       previewBtn.classList.remove('loading');
       previewBtn.textContent = 'プレビュー';
+      resetProgress(progressEl);
     }
   });
 
@@ -314,9 +318,10 @@
     convertBtn.classList.add('loading');
     convertBtn.textContent = '変換中';
     hideStatus(statusEl);
+    resetProgress(progressEl);
 
     try {
-      const pdfBytes = await generatePDF(ordered, getOptions(root));
+      const pdfBytes = await generatePDF(ordered, getOptions(root), progressEl);
       downloadPDF(pdfBytes, generateFilename(ordered));
       showStatus(statusEl, 'success',
         `PDF を生成しました（${ordered.length} 枚 ・ ${formatBytes(pdfBytes.length)}）`);
@@ -327,6 +332,7 @@
       convertBtn.disabled = false;
       convertBtn.classList.remove('loading');
       convertBtn.textContent = 'PDFに変換';
+      resetProgress(progressEl);
     }
   });
 })();

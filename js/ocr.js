@@ -2,7 +2,7 @@
 (() => {
   const {
     getOptions, downloadBlob, formatBytes,
-    showStatus, hideStatus,
+    showStatus, hideStatus, showProgress, resetProgress,
   } = PdfApp;
 
   // Lazy <script> loader for Tesseract.js
@@ -40,6 +40,7 @@
   const pageInput      = document.getElementById('ocr-page');
   const extractBtn     = document.getElementById('ocr-btn');
   const statusEl       = document.getElementById('ocr-status');
+  const progressEl     = document.getElementById('ocr-progress');
   const resultArea     = document.getElementById('ocr-result');
   const copyBtn        = document.getElementById('ocr-copy-btn');
 
@@ -181,15 +182,19 @@
     extractBtn.textContent = '抽出中';
     resultArea.value = '';
     hideStatus(statusEl);
+    resetProgress(progressEl);
 
     try {
       const results = [];
 
       if (fileData.type === 'pdf') {
+        let i = 0;
         for (const p of pages) {
           const canvas = await renderPageToCanvas(p);
           const text = await extractPageText(canvas, lang);
           results.push(`--- ページ ${p} ---\n${text}`);
+          i++;
+          showProgress(progressEl, (i / pages.length) * 100);
         }
       } else {
         // Image: load as <img> and extract
@@ -214,6 +219,7 @@
       extractBtn.disabled = false;
       extractBtn.classList.remove('loading');
       extractBtn.textContent = 'テキスト抽出';
+      resetProgress(progressEl);
     }
   });
 

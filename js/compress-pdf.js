@@ -4,7 +4,7 @@
 (() => {
   const {
     PDFDocument, getOptions, downloadPDF, formatBytes,
-    showStatus, hideStatus,
+    showStatus, hideStatus, showProgress, resetProgress,
   } = PdfApp;
 
   // scale = render DPI factor, q = JPEG quality
@@ -27,6 +27,7 @@
   const warningEl  = document.getElementById('cmp-warning');
   const compressBtn= document.getElementById('cmp-btn');
   const statusEl   = document.getElementById('cmp-status');
+  const progressEl = document.getElementById('cmp-progress');
 
   selectBtn.addEventListener('click', () => fileInput.click());
   fileInput.addEventListener('change', e => {
@@ -106,6 +107,7 @@
     compressBtn.classList.add('loading');
     compressBtn.textContent = '圧縮中';
     hideStatus(statusEl);
+    resetProgress(progressEl);
 
     try {
       const out = await PDFDocument.create();
@@ -114,6 +116,7 @@
         const img = await out.embedJpg(bytes);
         const page = out.addPage([w, h]);
         page.drawImage(img, { x: 0, y: 0, width: w, height: h });
+        showProgress(progressEl, (p / pdfDoc.numPages) * 100);
       }
       const result = await out.save();
       const newSize = result.length;
@@ -136,6 +139,7 @@
       compressBtn.disabled = false;
       compressBtn.classList.remove('loading');
       compressBtn.textContent = '圧縮する';
+      resetProgress(progressEl);
     }
   });
 })();
