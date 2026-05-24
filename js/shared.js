@@ -14,9 +14,6 @@ window.PdfApp = (() => {
   const MARGIN_PT   = { none: 0, small: 14, large: 28 };
   const QUALITY_MAP = { high: 0.92, medium: 0.75, small: 0.45 };
 
-  // Resource limits (self-DoS guard for fully client-side processing)
-  const MAX_FILES = 200;
-  const MAX_TOTAL_BYTES = 300 * 1024 * 1024; // 300MB
 
   // ── Formatting ──
   function formatBytes(n) {
@@ -335,7 +332,7 @@ window.PdfApp = (() => {
 
   return {
     PDFDocument,
-    MM_TO_PT, PAGE_SIZES, MARGIN_PT, QUALITY_MAP, MAX_FILES, MAX_TOTAL_BYTES,
+    MM_TO_PT, PAGE_SIZES, MARGIN_PT, QUALITY_MAP,
     formatBytes, getOptions, calcLayout, processImageFile, imageViaCanvas,
     isTiff, isHeic, makeThumbnail,
     downloadBlob, downloadPDF, showStatus, hideStatus, showProgress, resetProgress, openPreview, closeModal,

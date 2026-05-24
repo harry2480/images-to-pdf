@@ -1,7 +1,7 @@
 // JPG/PNG/WebP/GIF/BMP → single PDF.
 (() => {
   const {
-    PDFDocument, MARGIN_PT, QUALITY_MAP, MAX_FILES, MAX_TOTAL_BYTES,
+    PDFDocument, MARGIN_PT, QUALITY_MAP,
     calcLayout, processImageFile, getOptions, downloadPDF, formatBytes,
     showStatus, hideStatus, showProgress, resetProgress, openPreview, isTiff, isHeic, makeThumbnail, openCropEditor,
   } = PdfApp;
@@ -75,16 +75,11 @@
   // ── Add files ──
   function addFiles(fileList_) {
     const incoming = Array.from(fileList_).filter(isAllowed);
-    let total = files.reduce((s, e) => s + e.file.size, 0);
-    let skipped = 0;
 
     for (const file of incoming) {
-      if (files.length >= MAX_FILES) { skipped++; continue; }
-      if (total + file.size > MAX_TOTAL_BYTES) { skipped++; continue; }
       const id = nextId++;
       files.push({ id, file, rotation: 0 });
       renderCard({ id, file, rotation: 0 });
-      total += file.size;
     }
 
     if (files.length > 0) showWorkspace();
@@ -92,10 +87,6 @@
     if (incoming.some(isHeic)) {
       showStatus(statusEl, 'success', 'HEIC を変換中です…（初回は読み込みに時間がかかります）');
       setTimeout(() => { if (statusEl.textContent.startsWith('HEIC')) hideStatus(statusEl); }, 6000);
-    }
-    if (skipped > 0) {
-      showStatus(statusEl, 'error',
-        `上限（${MAX_FILES}枚 / ${formatBytes(MAX_TOTAL_BYTES)}）を超えるため ${skipped} 件を追加できませんでした`);
     }
   }
 

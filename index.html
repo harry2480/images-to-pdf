@@ -4,6 +4,11 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>PDFツール — 画像→PDF・PDF結合</title>
+  <link rel="manifest" href="/manifest.json">
+  <meta name="theme-color" content="#e8192c">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="PDF Tools">
+  <link rel="apple-touch-icon" href="/icons/icon-192.png">
   <link rel="stylesheet" href="libs/cropper.min.css">
   <link rel="stylesheet" href="style.css">
 </head>
@@ -551,5 +556,10 @@
   <script src="js/split-pdf.js"></script>
   <script src="js/ocr.js"></script>
   <script src="js/watermark.js?v=2"></script>
+  <script>
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('/sw.js');
+    }
+  </script>
 </body>
 </html>
