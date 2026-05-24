@@ -1,7 +1,7 @@
 // PDF → images (one per page) via pdf.js. Multi-page output is zipped with fflate.
 (() => {
   const {
-    MAX_TOTAL_BYTES, getOptions, downloadBlob, formatBytes,
+    getOptions, downloadBlob, formatBytes,
     showStatus, hideStatus,
   } = PdfApp;
 
@@ -46,10 +46,6 @@
   async function loadPdf(file) {
     if (!isPdf(file)) {
       showStatus(statusEl, 'error', 'PDFファイルを選択してください');
-      return;
-    }
-    if (file.size > MAX_TOTAL_BYTES) {
-      showStatus(statusEl, 'error', `上限（${formatBytes(MAX_TOTAL_BYTES)}）を超えています`);
       return;
     }
     hideStatus(statusEl);

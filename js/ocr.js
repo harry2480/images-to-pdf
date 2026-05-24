@@ -1,7 +1,7 @@
 // OCR: extract text from PDF or image using Tesseract.js
 (() => {
   const {
-    MAX_TOTAL_BYTES, getOptions, downloadBlob, formatBytes,
+    getOptions, downloadBlob, formatBytes,
     showStatus, hideStatus,
   } = PdfApp;
 
@@ -68,10 +68,6 @@
   async function loadFile(file) {
     if (!isSupported(file)) {
       showStatus(statusEl, 'error', 'PDF または画像ファイルを選択してください');
-      return;
-    }
-    if (file.size > MAX_TOTAL_BYTES) {
-      showStatus(statusEl, 'error', `上限（${formatBytes(MAX_TOTAL_BYTES)}）を超えています`);
       return;
     }
     hideStatus(statusEl);

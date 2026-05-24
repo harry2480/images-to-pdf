@@ -1,7 +1,7 @@
 // Merge multiple PDFs into one (pdf-lib copyPages).
 (() => {
   const {
-    PDFDocument, MAX_FILES, MAX_TOTAL_BYTES,
+    PDFDocument,
     downloadPDF, formatBytes, showStatus, hideStatus, openPreview,
   } = PdfApp;
 
@@ -54,23 +54,15 @@
 
   function addFiles(fileList_) {
     const incoming = Array.from(fileList_).filter(isPdf);
-    let total = files.reduce((s, e) => s + e.file.size, 0);
-    let skipped = 0;
 
     for (const file of incoming) {
-      if (files.length >= MAX_FILES || total + file.size > MAX_TOTAL_BYTES) { skipped++; continue; }
       const id = nextId++;
       files.push({ id, file });
       renderCard({ id, file });
-      total += file.size;
     }
 
     if (files.length > 0) showWorkspace();
     updateNumbers();
-    if (skipped > 0) {
-      showStatus(statusEl, 'error',
-        `上限（${MAX_FILES}件 / ${formatBytes(MAX_TOTAL_BYTES)}）を超えるため ${skipped} 件を追加できませんでした`);
-    }
   }
 
   function showWorkspace() {
