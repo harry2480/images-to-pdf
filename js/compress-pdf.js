@@ -3,7 +3,7 @@
 // only useful for image-based PDFs. Text PDFs are warned about (and may grow).
 (() => {
   const {
-    PDFDocument, MAX_TOTAL_BYTES, getOptions, downloadPDF, formatBytes,
+    PDFDocument, getOptions, downloadPDF, formatBytes,
     showStatus, hideStatus,
   } = PdfApp;
 
@@ -48,10 +48,6 @@
 
   async function loadPdf(file) {
     if (!isPdf(file)) { showStatus(statusEl, 'error', 'PDFファイルを選択してください'); return; }
-    if (file.size > MAX_TOTAL_BYTES) {
-      showStatus(statusEl, 'error', `上限（${formatBytes(MAX_TOTAL_BYTES)}）を超えています`);
-      return;
-    }
     hideStatus(statusEl);
     warningEl.classList.add('hidden');
     try {
