@@ -1,7 +1,7 @@
 // Watermark: add text or image watermark to PDF
 (() => {
   const {
-    PDFDocument, MAX_TOTAL_BYTES, getOptions, downloadPDF, formatBytes,
+    PDFDocument, getOptions, downloadPDF, formatBytes,
     showStatus, hideStatus,
   } = PdfApp;
   const { degrees } = PDFLib;
@@ -56,10 +56,6 @@
   async function loadPdf(file) {
     if (!isPdf(file)) {
       showStatus(statusEl, 'error', 'PDFファイルを選択してください');
-      return;
-    }
-    if (file.size > MAX_TOTAL_BYTES) {
-      showStatus(statusEl, 'error', `上限（${formatBytes(MAX_TOTAL_BYTES)}）を超えています`);
       return;
     }
     hideStatus(statusEl);
