@@ -190,19 +190,27 @@ window.PdfApp = (() => {
   }
 
   // Decode → (rotate) → re-encode to JPEG/PNG bytes for pdf-lib embedding.
+  // Sizes the canvas to the rotated bounding box so arbitrary angles aren't clipped.
   async function imageViaCanvas(file, rotation, qualityVal) {
     const { drawable, w, h } = await loadDrawable(file);
-    const rotated90 = rotation === 90 || rotation === 270;
+    const rad = (rotation * Math.PI) / 180;
+    const cos = Math.abs(Math.cos(rad));
+    const sin = Math.abs(Math.sin(rad));
     const canvas = document.createElement('canvas');
-    canvas.width  = rotated90 ? h : w;
-    canvas.height = rotated90 ? w : h;
+    canvas.width  = Math.max(1, Math.round(w * cos + h * sin));
+    canvas.height = Math.max(1, Math.round(w * sin + h * cos));
     const ctx = canvas.getContext('2d');
-    ctx.translate(canvas.width / 2, canvas.height / 2);
-    ctx.rotate((rotation * Math.PI) / 180);
-    ctx.drawImage(drawable, -w / 2, -h / 2);
     // PNG keeps transparency; everything else (incl. GIF/BMP/WebP/TIFF) → JPEG.
     const outType = file.type === 'image/png' ? 'image/png' : 'image/jpeg';
-    const q = file.type === 'image/png' ? undefined : qualityVal;
+    // JPEG has no alpha: fill the corners exposed by non-90° rotation with white.
+    if (outType === 'image/jpeg') {
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+    }
+    ctx.translate(canvas.width / 2, canvas.height / 2);
+    ctx.rotate(rad);
+    ctx.drawImage(drawable, -w / 2, -h / 2);
+    const q = outType === 'image/png' ? undefined : qualityVal;
     const blob = await new Promise(res => canvas.toBlob(res, outType, q));
     if (!blob) throw new Error('変換失敗');
     return { bytes: await blob.arrayBuffer(), isJpeg: outType === 'image/jpeg' };
@@ -237,6 +245,13 @@ window.PdfApp = (() => {
 
   function downloadPDF(pdfBytes, filename) {
     downloadBlob(new Blob([pdfBytes], { type: 'application/pdf' }), filename);
+  }
+
+  // ── PDF Rotation ──
+  function normalizeAngle(angle) {
+    let normalized = angle % 360;
+    if (normalized < 0) normalized += 360;
+    return normalized;
   }
 
   // ── Status ──
@@ -336,6 +351,7 @@ window.PdfApp = (() => {
     formatBytes, getOptions, calcLayout, processImageFile, imageViaCanvas,
     isTiff, isHeic, makeThumbnail,
     downloadBlob, downloadPDF, showStatus, hideStatus, showProgress, resetProgress, openPreview, closeModal,
+    normalizeAngle,
     showTool,
   };
 })();

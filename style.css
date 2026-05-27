@@ -1033,3 +1033,253 @@ footer {
     font-size: 0.8rem;
   }
 }
+
+/* JPG-to-PDF Card Slider Controls */
+.file-card-slider-container {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 8px;
+  padding: 8px;
+  background: var(--surface-2);
+  border-radius: 6px;
+  flex-wrap: wrap;
+}
+
+.file-card-slider-label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.file-card-slider {
+  flex: 1;
+  min-width: 80px;
+  height: 4px;
+  cursor: pointer;
+  -webkit-appearance: none;
+  appearance: none;
+  background: var(--border);
+  border-radius: 3px;
+}
+
+.file-card-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--accent);
+  cursor: pointer;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+}
+
+.file-card-slider::-moz-range-thumb {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--accent);
+  cursor: pointer;
+  border: none;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+}
+
+.file-card-angle-input {
+  width: 50px;
+  padding: 4px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: var(--card-bg);
+  color: var(--text);
+  font-size: 0.75rem;
+}
+
+/* PDF Rotation Tool */
+.rot-pages-container {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  gap: 12px;
+  margin: 20px 0;
+  padding: 16px;
+  background: var(--surface-2);
+  border-radius: var(--radius);
+}
+
+.rot-page-item {
+  position: relative;
+  border: 2px solid var(--border);
+  border-radius: 8px;
+  background: var(--card-bg);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.rot-page-item:hover {
+  border-color: var(--accent);
+  box-shadow: 0 0 8px rgba(232, 25, 44, 0.2);
+}
+
+[data-theme="dark"] .rot-page-item:hover {
+  box-shadow: 0 0 8px rgba(96, 165, 250, 0.2);
+}
+
+.rot-page-item.active {
+  border-color: var(--accent);
+  background: var(--accent-light);
+}
+
+.rot-page-thumb {
+  width: 100%;
+  height: 120px;
+  object-fit: contain;
+  padding: 4px;
+  display: block;
+}
+
+.rot-page-num {
+  position: absolute;
+  bottom: 4px;
+  right: 4px;
+  background: var(--accent);
+  color: white;
+  border-radius: 50%;
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.7rem;
+  font-weight: 700;
+}
+
+.rot-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 16px;
+  background: var(--surface-2);
+  border-radius: var(--radius);
+  margin: 16px 0;
+  flex-wrap: wrap;
+}
+
+.rot-btn {
+  padding: 8px 16px;
+  background: var(--accent);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 600;
+  transition: all 0.2s;
+}
+
+.rot-btn:hover {
+  background: var(--accent-hover);
+  transform: scale(1.05);
+}
+
+.rot-btn:active {
+  transform: scale(0.98);
+}
+
+.rot-slider-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.rot-slider-group label {
+  font-size: 0.875rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.rot-slider-group input[type="range"] {
+  width: 150px;
+  cursor: pointer;
+  height: 6px;
+  -webkit-appearance: none;
+  appearance: none;
+  background: var(--border);
+  border-radius: 3px;
+}
+
+.rot-slider-group input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--accent);
+  cursor: pointer;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+}
+
+.rot-slider-group input[type="range"]::-moz-range-thumb {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--accent);
+  cursor: pointer;
+  border: none;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+}
+
+.rot-slider-group input[type="number"] {
+  width: 70px;
+  padding: 6px 8px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--card-bg);
+  color: var(--text);
+  font-size: 0.875rem;
+}
+
+.rot-batch {
+  text-align: center;
+  padding: 16px 0;
+}
+
+.rot-batch-btn {
+  padding: 10px 24px;
+  background: var(--surface-2);
+  border: 2px dashed var(--border);
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 600;
+  color: var(--text);
+  transition: all 0.2s;
+}
+
+.rot-batch-btn:hover {
+  border-color: var(--accent);
+  background: var(--accent-light);
+  color: var(--accent);
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .rot-toolbar {
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .rot-slider-group {
+    flex-direction: column;
+    width: 100%;
+  }
+
+  .rot-slider-group input[type="range"] {
+    width: 100%;
+  }
+
+  .rot-slider-group input[type="number"] {
+    width: 100%;
+  }
+
+  .rot-pages-container {
+    grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+  }
+}
