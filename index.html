@@ -53,6 +53,7 @@
     <button class="tool-nav-btn" data-tool="pdf-to-jpg">PDF → 画像</button>
     <button class="tool-nav-btn" data-tool="merge-pdf">PDF結合</button>
     <button class="tool-nav-btn" data-tool="compress-pdf">PDF圧縮</button>
+    <button class="tool-nav-btn" data-tool="rotate-pdf">PDF回転</button>
     <button class="tool-nav-btn" data-tool="split-pdf">PDF分割</button>
     <button class="tool-nav-btn" data-tool="ocr">OCR</button>
     <button class="tool-nav-btn" data-tool="watermark">透かし</button>
@@ -286,6 +287,54 @@
           <span class="progress-label">0%</span>
         </div>
         <div id="cmp-status" class="status hidden"></div>
+      </div>
+    </section>
+
+    <!-- ════════ PDF回転 ════════ -->
+    <section data-tool="rotate-pdf" class="hidden">
+      <div id="rot-drop-zone" class="drop-zone">
+        <input type="file" id="rot-file-input" accept="application/pdf" hidden>
+        <div class="drop-zone-inner">
+          <svg class="drop-icon" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <rect x="14" y="8" width="36" height="48" rx="3" stroke="currentColor" stroke-width="3"/>
+            <path d="M32 16 L38 22 L32 28 M32 48 L38 42 L32 36" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          <p class="drop-text">ここにPDFをドロップ</p>
+          <p class="drop-subtext">または</p>
+          <button class="btn-select" id="rot-select-btn">ファイルを選択</button>
+          <p class="drop-hint">PDFの向きを変更して保存します</p>
+        </div>
+      </div>
+
+      <div id="rot-workspace" class="workspace hidden">
+        <div id="rot-info" class="p2j-info"></div>
+
+        <div id="rot-pages" class="rot-pages-container"></div>
+
+        <div class="rot-toolbar">
+          <button class="rot-btn rot-left" id="rot-btn-left" title="左に90度回転">↻ 90°</button>
+          <div class="rot-slider-group">
+            <label for="rot-slider">角度（度）</label>
+            <input type="range" id="rot-slider" min="-180" max="180" step="1" value="0">
+            <input type="number" id="rot-angle-input" min="-180" max="180" step="1" value="0">
+          </div>
+          <button class="rot-btn rot-right" id="rot-btn-right" title="右に90度回転">⟲ 90°</button>
+        </div>
+
+        <div class="rot-batch">
+          <button class="rot-batch-btn" id="rot-apply-all">すべてのページに適用</button>
+        </div>
+
+        <div class="convert-row">
+          <button class="btn-preview" id="rot-preview-btn">プレビュー</button>
+          <button class="btn-convert" id="rot-convert-btn">回転して保存</button>
+        </div>
+
+        <div id="rot-progress" class="progress-wrap hidden">
+          <div class="progress-track"><div class="progress-fill"></div></div>
+          <span class="progress-label">0%</span>
+        </div>
+        <div id="rot-status" class="status hidden"></div>
       </div>
     </section>
 
@@ -553,6 +602,7 @@
   <script src="js/merge-pdf.js"></script>
   <script src="js/pdf-to-jpg.js"></script>
   <script src="js/compress-pdf.js"></script>
+  <script src="js/rotate-pdf.js"></script>
   <script src="js/split-pdf.js"></script>
   <script src="js/ocr.js"></script>
   <script src="js/watermark.js?v=2"></script>

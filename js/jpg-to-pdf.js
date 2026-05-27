@@ -147,6 +147,60 @@
     rotR.textContent = '↻';
     rotR.addEventListener('click', e => { e.stopPropagation(); rotateCard(id, 90); });
 
+    // Arbitrary angle slider (Phase 3)
+    const sliderContainer = document.createElement('div');
+    sliderContainer.className = 'file-card-slider-container';
+    sliderContainer.style.display = 'none'; // Hidden by default, toggle with button
+
+    const sliderLabel = document.createElement('label');
+    sliderLabel.className = 'file-card-slider-label';
+    sliderLabel.textContent = '角度:';
+    sliderLabel.htmlFor = `rot-slider-${id}`;
+
+    const slider = document.createElement('input');
+    slider.type = 'range';
+    slider.id = `rot-slider-${id}`;
+    slider.className = 'file-card-slider';
+    slider.min = '-180';
+    slider.max = '180';
+    slider.step = '1';
+    slider.value = rotation;
+
+    const angleInput = document.createElement('input');
+    angleInput.type = 'number';
+    angleInput.className = 'file-card-angle-input';
+    angleInput.min = '-180';
+    angleInput.max = '180';
+    angleInput.step = '1';
+    angleInput.value = rotation;
+    angleInput.title = '角度を入力（-180〜180度）';
+
+    const toggleSliderBtn = document.createElement('button');
+    toggleSliderBtn.className = 'btn-rotate';
+    toggleSliderBtn.title = '任意角度指定';
+    toggleSliderBtn.textContent = '◐';
+    toggleSliderBtn.addEventListener('click', e => {
+      e.stopPropagation();
+      const isHidden = sliderContainer.style.display === 'none';
+      sliderContainer.style.display = isHidden ? 'flex' : 'none';
+    });
+
+    slider.addEventListener('input', e => {
+      const angle = parseInt(e.target.value);
+      angleInput.value = angle;
+      updateCardRotation(id, angle);
+    });
+
+    angleInput.addEventListener('change', e => {
+      const angle = parseInt(e.target.value) || 0;
+      slider.value = angle;
+      updateCardRotation(id, angle);
+    });
+
+    sliderContainer.appendChild(sliderLabel);
+    sliderContainer.appendChild(slider);
+    sliderContainer.appendChild(angleInput);
+
     const cropBtn = document.createElement('button');
     cropBtn.className = 'btn-rotate';
     cropBtn.title = '編集（クロップ）';
@@ -164,9 +218,11 @@
 
     actions.appendChild(rotL);
     actions.appendChild(rotR);
+    actions.appendChild(toggleSliderBtn);
     actions.appendChild(cropBtn);
     footer.appendChild(name);
     footer.appendChild(actions);
+    footer.appendChild(sliderContainer);
 
     card.appendChild(thumbWrap);
     card.appendChild(num);
@@ -179,6 +235,14 @@
     const entry = files.find(f => f.id === id);
     if (!entry) return;
     entry.rotation = ((entry.rotation + delta) % 360 + 360) % 360;
+    const thumb = fileList.querySelector(`[data-id="${id}"] .file-card-thumb`);
+    if (thumb) thumb.style.transform = entry.rotation ? `rotate(${entry.rotation}deg)` : '';
+  }
+
+  function updateCardRotation(id, angle) {
+    const entry = files.find(f => f.id === id);
+    if (!entry) return;
+    entry.rotation = angle;
     const thumb = fileList.querySelector(`[data-id="${id}"] .file-card-thumb`);
     if (thumb) thumb.style.transform = entry.rotation ? `rotate(${entry.rotation}deg)` : '';
   }
