@@ -99,8 +99,37 @@
     }
   }
 
-  // Generate Thumbnail (placeholder SVG)
+  // Generate Thumbnail using pdf.js
   async function generateThumbnail(pageIndex) {
+    try {
+      if (typeof pdfjsLib === 'undefined') {
+        return generatePlaceholderThumbnail(pageIndex);
+      }
+
+      const pdfBytes = await pdfDoc.save();
+      const pdf = await pdfjsLib.getDocument(pdfBytes).promise;
+      const page = await pdf.getPage(pageIndex + 1);
+
+      const scale = 1;
+      const viewport = page.getViewport({ scale });
+      const canvas = document.createElement('canvas');
+      canvas.width = viewport.width;
+      canvas.height = viewport.height;
+
+      await page.render({
+        canvasContext: canvas.getContext('2d'),
+        viewport: viewport,
+      }).promise;
+
+      return canvas.toDataURL('image/jpeg', 0.7);
+    } catch (err) {
+      console.warn(`Thumbnail generation failed for page ${pageIndex + 1}:`, err);
+      return generatePlaceholderThumbnail(pageIndex);
+    }
+  }
+
+  // Generate Placeholder Thumbnail (SVG)
+  function generatePlaceholderThumbnail(pageIndex) {
     return `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 160'%3E%3Crect width='120' height='160' fill='%23f0f0f0'/%3E%3Ctext x='50%25' y='50%25' font-size='14' text-anchor='middle' dy='.3em' fill='%23999'%3E${pageIndex + 1}%3C/text%3E%3C/svg%3E`;
   }
 
