@@ -239,6 +239,21 @@ window.PdfApp = (() => {
     downloadBlob(new Blob([pdfBytes], { type: 'application/pdf' }), filename);
   }
 
+  // ── PDF Rotation ──
+  function normalizeAngle(angle) {
+    let normalized = angle % 360;
+    if (normalized < 0) normalized += 360;
+    return normalized;
+  }
+
+  function rotatePdfPage(page, angle) {
+    const { degrees } = PDFLib;
+    const normalized = normalizeAngle(angle);
+    if (normalized !== 0) {
+      page.setRotation(degrees(normalized));
+    }
+  }
+
   // ── Status ──
   function showStatus(el, type, msg) {
     el.textContent = msg;
@@ -336,6 +351,7 @@ window.PdfApp = (() => {
     formatBytes, getOptions, calcLayout, processImageFile, imageViaCanvas,
     isTiff, isHeic, makeThumbnail,
     downloadBlob, downloadPDF, showStatus, hideStatus, showProgress, resetProgress, openPreview, closeModal,
+    normalizeAngle, rotatePdfPage,
     showTool,
   };
 })();
