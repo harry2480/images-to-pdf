@@ -1,7 +1,8 @@
 // PDF Rotation Tool
 (() => {
-  const { PDFDocument, downloadPDF, showStatus, hideStatus,
-          showProgress, resetProgress, normalizeAngle, rotatePdfPage } = PdfApp;
+  const { PDFDocument, showStatus, hideStatus,
+          showProgress, resetProgress, normalizeAngle } = PdfApp;
+  const { degrees } = PDFLib;
 
   // State
   let pdfFile = null;
@@ -83,15 +84,31 @@
     }
   }
 
-  // Render Thumbnails
+  // Render Thumbnails — render the whole document with pdf.js ONCE, then slice
+  // per page. (Saving/parsing the PDF per page would be O(n²).)
   async function renderPageThumbnails() {
     pagesContainer.innerHTML = '';
-    for (let i = 0; i < pdfDoc.getPageCount(); i++) {
+    const pageCount = pdfDoc.getPageCount();
+
+    let pdfjsDoc = null;
+    try {
+      if (typeof pdfjsLib !== 'undefined') {
+        const bytes = await pdfDoc.save();
+        pdfjsDoc = await pdfjsLib.getDocument({ data: bytes }).promise;
+      }
+    } catch (err) {
+      console.warn('Thumbnail document load failed:', err);
+      pdfjsDoc = null;
+    }
+
+    for (let i = 0; i < pageCount; i++) {
       const pageEl = document.createElement('div');
       pageEl.className = 'rot-page-item';
       pageEl.dataset.pageIndex = i;
 
-      const thumb = await generateThumbnail(i);
+      const thumb = pdfjsDoc
+        ? await renderThumbnail(pdfjsDoc, i)
+        : generatePlaceholderThumbnail(i);
       pageEl.innerHTML = `<img class="rot-page-thumb" src="${thumb}" alt="Page ${i + 1}">
                           <span class="rot-page-num">${i + 1}</span>`;
       pageEl.addEventListener('click', () => selectPage(i));
@@ -99,31 +116,20 @@
     }
   }
 
-  // Generate Thumbnail using pdf.js
-  async function generateThumbnail(pageIndex) {
+  async function renderThumbnail(pdfjsDoc, pageIndex) {
     try {
-      if (typeof pdfjsLib === 'undefined') {
-        return generatePlaceholderThumbnail(pageIndex);
-      }
-
-      const pdfBytes = await pdfDoc.save();
-      const pdf = await pdfjsLib.getDocument(pdfBytes).promise;
-      const page = await pdf.getPage(pageIndex + 1);
-
-      const scale = 1;
-      const viewport = page.getViewport({ scale });
+      const page = await pdfjsDoc.getPage(pageIndex + 1);
+      const viewport = page.getViewport({ scale: 0.5 });
       const canvas = document.createElement('canvas');
       canvas.width = viewport.width;
       canvas.height = viewport.height;
-
       await page.render({
         canvasContext: canvas.getContext('2d'),
-        viewport: viewport,
+        viewport,
       }).promise;
-
       return canvas.toDataURL('image/jpeg', 0.7);
     } catch (err) {
-      console.warn(`Thumbnail generation failed for page ${pageIndex + 1}:`, err);
+      console.warn(`Thumbnail render failed for page ${pageIndex + 1}:`, err);
       return generatePlaceholderThumbnail(pageIndex);
     }
   }
@@ -172,28 +178,75 @@
 
   function updatePageRotation(index, angle) {
     pageRotations[index].angle = angle;
+    applyThumbTransform(index);
+  }
+
+  // Live visual feedback: rotate the thumbnail to match the chosen angle.
+  function applyThumbTransform(index) {
+    const img = pagesContainer.querySelector(
+      `.rot-page-item[data-page-index="${index}"] .rot-page-thumb`
+    );
+    if (img) {
+      const angle = pageRotations[index].angle;
+      img.style.transform = angle ? `rotate(${angle}deg)` : '';
+    }
   }
 
   function applyToAllPages(angle) {
-    pageRotations.forEach((rot) => {
+    pageRotations.forEach((rot, i) => {
       rot.angle = angle;
+      applyThumbTransform(i);
     });
     selectPage(currentPageIndex);
   }
 
-  // Generate Rotated PDF
+  // Generate Rotated PDF.
+  // - Multiples of 90: use the PDF /Rotate entry (lossless, keeps text/links),
+  //   added on top of any rotation the source page already has.
+  // - Other angles: /Rotate only allows multiples of 90, so embed the page as a
+  //   form XObject on a new page sized to the rotated bounding box and draw it
+  //   with a rotation matrix.
   async function generateRotatedPdf() {
     const outPdf = await PDFDocument.create();
-    const indices = Array.from({ length: pdfDoc.getPageCount() }, (_, i) => i);
-    const pages = await outPdf.copyPages(pdfDoc, indices);
+    const pageCount = pdfDoc.getPageCount();
 
-    pages.forEach((page, i) => {
-      outPdf.addPage(page);
-      const angle = pageRotations[i].angle;
-      if (angle !== 0) {
-        rotatePdfPage(page, angle);
+    for (let i = 0; i < pageCount; i++) {
+      const angle = normalizeAngle(pageRotations[i].angle);
+
+      if (angle % 90 === 0) {
+        const [copied] = await outPdf.copyPages(pdfDoc, [i]);
+        outPdf.addPage(copied);
+        if (angle !== 0) {
+          const existing = copied.getRotation().angle;
+          copied.setRotation(degrees(normalizeAngle(existing + angle)));
+        }
+      } else {
+        const srcPage = pdfDoc.getPage(i);
+        const { width: w, height: h } = srcPage.getSize();
+        const embedded = await outPdf.embedPage(srcPage);
+
+        const rad = (angle * Math.PI) / 180;
+        const c = Math.cos(rad);
+        const s = Math.sin(rad);
+        // Corners of the page after rotating about the origin.
+        const xs = [0, w * c, w * c - h * s, -h * s];
+        const ys = [0, w * s, w * s + h * c, h * c];
+        const minX = Math.min(...xs);
+        const maxX = Math.max(...xs);
+        const minY = Math.min(...ys);
+        const maxY = Math.max(...ys);
+
+        const page = outPdf.addPage([maxX - minX, maxY - minY]);
+        // Offset so the rotated content's bounding box sits at the page origin.
+        page.drawPage(embedded, {
+          x: -minX,
+          y: -minY,
+          rotate: degrees(angle),
+        });
       }
-    });
+
+      showProgress(progressEl, ((i + 1) / pageCount) * 100);
+    }
 
     return await outPdf.save();
   }
