@@ -191,7 +191,8 @@ window.PdfApp = (() => {
 
   // Decode → (rotate) → re-encode to JPEG/PNG bytes for pdf-lib embedding.
   // Sizes the canvas to the rotated bounding box so arbitrary angles aren't clipped.
-  async function imageViaCanvas(file, rotation, qualityVal) {
+  // `outType` overrides the default target (used by the image format converter).
+  async function imageViaCanvas(file, rotation, qualityVal, outType) {
     const { drawable, w, h } = await loadDrawable(file);
     const rad = (rotation * Math.PI) / 180;
     const cos = Math.abs(Math.cos(rad));
@@ -201,7 +202,7 @@ window.PdfApp = (() => {
     canvas.height = Math.max(1, Math.round(w * sin + h * cos));
     const ctx = canvas.getContext('2d');
     // PNG keeps transparency; everything else (incl. GIF/BMP/WebP/TIFF) → JPEG.
-    const outType = file.type === 'image/png' ? 'image/png' : 'image/jpeg';
+    if (!outType) outType = file.type === 'image/png' ? 'image/png' : 'image/jpeg';
     // JPEG has no alpha: fill the corners exposed by non-90° rotation with white.
     if (outType === 'image/jpeg') {
       ctx.fillStyle = '#ffffff';
@@ -213,7 +214,37 @@ window.PdfApp = (() => {
     const q = outType === 'image/png' ? undefined : qualityVal;
     const blob = await new Promise(res => canvas.toBlob(res, outType, q));
     if (!blob) throw new Error('変換失敗');
-    return { bytes: await blob.arrayBuffer(), isJpeg: outType === 'image/jpeg' };
+    return { bytes: await blob.arrayBuffer(), isJpeg: outType === 'image/jpeg', type: blob.type };
+  }
+
+  // ── Image format conversion helpers (kept in sync with js/utils.js, which is test-only) ──
+  const IMAGE_OUTPUT_FORMATS = {
+    jpeg: { mime: 'image/jpeg', ext: 'jpg',  lossy: true },
+    png:  { mime: 'image/png',  ext: 'png',  lossy: false },
+    webp: { mime: 'image/webp', ext: 'webp', lossy: true },
+  };
+
+  function replaceExtension(name, ext) {
+    const base = (name || '').replace(/\.[^.]+$/, '');
+    return `${base || 'image'}.${ext}`;
+  }
+
+  // Make `name` unique within `used` (mutated): a.jpg, a (2).jpg, a (3).jpg …
+  function uniqueName(name, used) {
+    const m = name.match(/^(.*?)(\.[^.]*)?$/);
+    const base = m[1];
+    const ext = m[2] || '';
+    let candidate = name;
+    for (let n = 2; used.has(candidate); n++) candidate = `${base} (${n})${ext}`;
+    used.add(candidate);
+    return candidate;
+  }
+
+  // Whether canvas.toBlob can produce `mime` in this browser (Safari lacks WebP encoding).
+  function canEncodeImage(mime) {
+    const c = document.createElement('canvas');
+    c.width = c.height = 1;
+    try { return c.toDataURL(mime).startsWith(`data:${mime}`); } catch { return false; }
   }
 
   // Thumbnail data URL for the card grid. TIFF can't be shown via <img> directly.
@@ -350,6 +381,7 @@ window.PdfApp = (() => {
     MM_TO_PT, PAGE_SIZES, MARGIN_PT, QUALITY_MAP,
     formatBytes, getOptions, calcLayout, processImageFile, imageViaCanvas,
     isTiff, isHeic, makeThumbnail,
+    IMAGE_OUTPUT_FORMATS, replaceExtension, uniqueName, canEncodeImage,
     downloadBlob, downloadPDF, showStatus, hideStatus, showProgress, resetProgress, openPreview, closeModal,
     normalizeAngle,
     showTool,

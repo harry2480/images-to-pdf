@@ -7,7 +7,10 @@ import {
   MM_TO_PT,
   PAGE_SIZES,
   MARGIN_PT,
-  QUALITY_MAP
+  QUALITY_MAP,
+  IMAGE_OUTPUT_FORMATS,
+  replaceExtension,
+  uniqueName
 } from '../js/utils.js';
 
 describe('formatBytes', () => {
@@ -246,5 +249,59 @@ describe('Constants', () => {
     expect(QUALITY_MAP.high).toBe(0.92);
     expect(QUALITY_MAP.medium).toBe(0.75);
     expect(QUALITY_MAP.small).toBe(0.45);
+  });
+});
+
+describe('IMAGE_OUTPUT_FORMATS', () => {
+  it('maps each format to a MIME type and extension', () => {
+    expect(IMAGE_OUTPUT_FORMATS.jpeg).toEqual({ mime: 'image/jpeg', ext: 'jpg', lossy: true });
+    expect(IMAGE_OUTPUT_FORMATS.png).toEqual({ mime: 'image/png', ext: 'png', lossy: false });
+    expect(IMAGE_OUTPUT_FORMATS.webp).toEqual({ mime: 'image/webp', ext: 'webp', lossy: true });
+  });
+});
+
+describe('replaceExtension', () => {
+  it('swaps the extension', () => {
+    expect(replaceExtension('photo.png', 'jpg')).toBe('photo.jpg');
+    expect(replaceExtension('IMG_0001.HEIC', 'jpg')).toBe('IMG_0001.jpg');
+  });
+
+  it('only touches the last extension', () => {
+    expect(replaceExtension('archive.tar.png', 'webp')).toBe('archive.tar.webp');
+  });
+
+  it('appends when there is no extension', () => {
+    expect(replaceExtension('photo', 'png')).toBe('photo.png');
+  });
+
+  it('falls back to a default base for empty or dot-only names', () => {
+    expect(replaceExtension('', 'jpg')).toBe('image.jpg');
+    expect(replaceExtension('.png', 'jpg')).toBe('image.jpg');
+    expect(replaceExtension(undefined, 'jpg')).toBe('image.jpg');
+  });
+});
+
+describe('uniqueName', () => {
+  it('returns the name unchanged when unused and records it', () => {
+    const used = new Set();
+    expect(uniqueName('a.jpg', used)).toBe('a.jpg');
+    expect(used.has('a.jpg')).toBe(true);
+  });
+
+  it('appends a counter before the extension on collision', () => {
+    const used = new Set();
+    expect(uniqueName('a.jpg', used)).toBe('a.jpg');
+    expect(uniqueName('a.jpg', used)).toBe('a (2).jpg');
+    expect(uniqueName('a.jpg', used)).toBe('a (3).jpg');
+  });
+
+  it('skips counters that are already taken', () => {
+    const used = new Set(['a.jpg', 'a (2).jpg']);
+    expect(uniqueName('a.jpg', used)).toBe('a (3).jpg');
+  });
+
+  it('handles names without an extension', () => {
+    const used = new Set(['a']);
+    expect(uniqueName('a', used)).toBe('a (2)');
   });
 });
