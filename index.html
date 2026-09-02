@@ -51,6 +51,7 @@
   <nav id="tool-nav" class="tool-nav">
     <button class="tool-nav-btn" data-tool="jpg-to-pdf">画像 → PDF</button>
     <button class="tool-nav-btn" data-tool="pdf-to-jpg">PDF → 画像</button>
+    <button class="tool-nav-btn" data-tool="image-convert">画像形式変換</button>
     <button class="tool-nav-btn" data-tool="merge-pdf">PDF結合</button>
     <button class="tool-nav-btn" data-tool="compress-pdf">PDF圧縮</button>
     <button class="tool-nav-btn" data-tool="rotate-pdf">PDF回転</button>
@@ -244,6 +245,66 @@
           <span class="progress-label">0%</span>
         </div>
         <div id="p2j-status" class="status hidden"></div>
+      </div>
+    </section>
+
+    <!-- ════════ 画像形式変換 ════════ -->
+    <section data-tool="image-convert" class="hidden">
+      <div id="ic-drop-zone" class="drop-zone">
+        <input type="file" id="ic-file-input" multiple accept="image/jpeg,image/png,image/webp,image/gif,image/bmp,image/tiff,image/heic,image/heif,.tif,.tiff,.heic,.heif" hidden>
+        <div class="drop-zone-inner">
+          <svg class="drop-icon" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <rect x="6" y="14" width="28" height="36" rx="3" stroke="currentColor" stroke-width="3"/>
+            <path d="M12 42l6-8 5 6 3-4 5 6" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M38 32h18m0 0l-6-6m6 6l-6 6" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          <p class="drop-text">ここに画像をドロップ</p>
+          <p class="drop-subtext">または</p>
+          <button class="btn-select" id="ic-select-btn">ファイルを選択</button>
+          <p class="drop-hint">JPG・PNG・WebP・GIF・BMP・TIFF・HEIC を JPG / PNG / WebP に変換します</p>
+        </div>
+      </div>
+
+      <div id="ic-workspace" class="workspace hidden">
+        <div class="batch-toolbar">
+          <button class="batch-btn danger" id="ic-clear">全て削除</button>
+        </div>
+
+        <div id="ic-file-list" class="file-list"></div>
+
+        <div class="add-more-row">
+          <button class="btn-add-more" id="ic-add-more-btn">+ 画像を追加</button>
+        </div>
+
+        <div class="options-panel">
+          <div class="option-group">
+            <label class="option-label">出力形式</label>
+            <div class="option-buttons" data-opt="format" id="ic-format">
+              <button class="opt-btn active" data-value="jpeg">JPG</button>
+              <button class="opt-btn" data-value="png">PNG</button>
+              <button class="opt-btn" data-value="webp" id="ic-format-webp">WebP</button>
+            </div>
+          </div>
+
+          <div class="option-group" id="ic-quality-group">
+            <label class="option-label">品質</label>
+            <div class="option-buttons" data-opt="quality">
+              <button class="opt-btn active" data-value="high">高品質</button>
+              <button class="opt-btn" data-value="medium">標準</button>
+              <button class="opt-btn" data-value="small">小サイズ</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="convert-row">
+          <button class="btn-convert" id="ic-convert-btn">変換する</button>
+        </div>
+
+        <div id="ic-progress" class="progress-wrap hidden">
+          <div class="progress-track"><div class="progress-fill"></div></div>
+          <span class="progress-label">0%</span>
+        </div>
+        <div id="ic-status" class="status hidden"></div>
       </div>
     </section>
 
@@ -601,6 +662,7 @@
   <script src="js/jpg-to-pdf.js"></script>
   <script src="js/merge-pdf.js"></script>
   <script src="js/pdf-to-jpg.js"></script>
+  <script src="js/image-convert.js"></script>
   <script src="js/compress-pdf.js"></script>
   <script src="js/rotate-pdf.js"></script>
   <script src="js/split-pdf.js"></script>

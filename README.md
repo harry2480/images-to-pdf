@@ -26,6 +26,14 @@ PDF を PNG、JPG、WebP などの画像形式に変換。
 - 品質・解像度を指定可能
 - 複数ページを一括処理
 
+### 画像形式変換
+
+画像を JPG / PNG / WebP に変換。拡張子の変更（例: HEIC → JPG、PNG → WebP）に対応。
+
+- 複数ファイルを一括変換（2 枚以上は ZIP でダウンロード）
+- JPG / WebP は品質を指定可能
+- WebP 出力はブラウザが対応している場合のみ選択可
+
 ### PDF 結合
 
 複数の PDF ファイルを 1 つに結合。
@@ -50,7 +58,7 @@ PDF ファイルサイズを削減。
 ### 出力
 
 - **PDF**: 標準準拠の PDF
-- **画像**: PNG / JPG / WebP
+- **画像**: PNG / JPG / WebP（PDF → 画像、画像形式変換）
 
 ## セットアップ
 
@@ -81,6 +89,7 @@ images-to-pdf/
 ├── js/
 │   ├── jpg-to-pdf.js       # 画像→PDF変換モジュール
 │   ├── pdf-to-image.js     # PDF→画像変換モジュール
+│   ├── image-convert.js    # 画像形式変換モジュール
 │   ├── merge-pdf.js        # PDF結合モジュール
 │   ├── compress-pdf.js     # PDF圧縮モジュール
 │   ├── crop-editor.js      # 画像クロップ編集モジュール

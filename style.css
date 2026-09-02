@@ -561,6 +561,10 @@ main {
   color: var(--accent);
 }
 
+.opt-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
 .opt-btn.active {
   background: var(--accent-light);
   border-color: var(--accent);
