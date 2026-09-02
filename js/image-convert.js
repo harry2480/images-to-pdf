@@ -188,7 +188,9 @@
     resetProgress(progressEl);
 
     try {
-      const { outputs, failed } = await convertAll(files, fmt, qualityVal);
+      // Snapshot: files added via "+ 画像を追加" mid-conversion must not leak into this batch.
+      const entries = files.slice();
+      const { outputs, failed } = await convertAll(entries, fmt, qualityVal);
 
       if (outputs.length === 0) {
         showStatus(statusEl, 'error', `変換できませんでした: ${failed.join(', ')}`);
