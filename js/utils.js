@@ -56,3 +56,28 @@ export function isTiff(file) {
 export function isHeic(file) {
   return /image\/hei[cf]/.test(file.type) || /\.(heic|heif)$/i.test(file.name || '');
 }
+
+// ── Image format conversion ──
+export const IMAGE_OUTPUT_FORMATS = {
+  jpeg: { mime: 'image/jpeg', ext: 'jpg',  lossy: true },
+  png:  { mime: 'image/png',  ext: 'png',  lossy: false },
+  webp: { mime: 'image/webp', ext: 'webp', lossy: true },
+};
+
+// "photo.HEIC" + "jpg" → "photo.jpg". Names without an extension get one appended.
+export function replaceExtension(name, ext) {
+  const base = (name || '').replace(/\.[^.]+$/, '');
+  return `${base || 'image'}.${ext}`;
+}
+
+// Make `name` unique within `used` (a Set that is mutated): a.jpg, a (2).jpg, a (3).jpg …
+// Needed because different sources (a.png, a.heic) collapse to the same output name.
+export function uniqueName(name, used) {
+  const m = name.match(/^(.*?)(\.[^.]*)?$/);
+  const base = m[1];
+  const ext = m[2] || '';
+  let candidate = name;
+  for (let n = 2; used.has(candidate); n++) candidate = `${base} (${n})${ext}`;
+  used.add(candidate);
+  return candidate;
+}

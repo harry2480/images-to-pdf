@@ -1,4 +1,4 @@
-const CACHE_NAME = 'pdf-tools-v1';
+const CACHE_NAME = 'pdf-tools-v2';
 
 const STATIC_ASSETS = [
   '/',
@@ -18,6 +18,7 @@ const STATIC_ASSETS = [
   '/js/jpg-to-pdf.js',
   '/js/merge-pdf.js',
   '/js/pdf-to-jpg.js',
+  '/js/image-convert.js',
   '/js/compress-pdf.js',
   '/js/split-pdf.js',
   '/js/ocr.js',
