@@ -1,4 +1,6 @@
-const CACHE_NAME = 'pdf-tools-v4';
+const CACHE_NAME = 'pdf-tools-v5';
+// AI runtime + models, filled by js/enhance-worker.js on first use. Must survive app updates.
+const ENHANCE_CACHE = 'enhance-models-v1';
 
 const STATIC_ASSETS = [
   '/',
@@ -37,7 +39,7 @@ self.addEventListener('install', event => {
 self.addEventListener('activate', event => {
   event.waitUntil(
     caches.keys().then(keys =>
-      Promise.all(keys.filter(k => k !== CACHE_NAME).map(k => caches.delete(k)))
+      Promise.all(keys.filter(k => k !== CACHE_NAME && k !== ENHANCE_CACHE).map(k => caches.delete(k)))
     )
   );
   self.clients.claim();
