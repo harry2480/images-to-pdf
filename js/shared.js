@@ -301,6 +301,7 @@ window.PdfApp = (() => {
     const labelEl = wrapEl.querySelector('.progress-label');
     if (fillEl) fillEl.style.width = percent + '%';
     if (labelEl) labelEl.textContent = label || Math.round(percent) + '%';
+    if (wrapEl.getAttribute('role') === 'progressbar') wrapEl.setAttribute('aria-valuenow', Math.round(percent));
   }
   function resetProgress(wrapEl) {
     wrapEl.classList.add('hidden');
@@ -308,6 +309,7 @@ window.PdfApp = (() => {
     const labelEl = wrapEl.querySelector('.progress-label');
     if (fillEl) fillEl.style.width = '0%';
     if (labelEl) labelEl.textContent = '0%';
+    if (wrapEl.getAttribute('role') === 'progressbar') wrapEl.setAttribute('aria-valuenow', 0);
   }
 
   // ── Shared preview modal ──
@@ -380,7 +382,7 @@ window.PdfApp = (() => {
     PDFDocument,
     MM_TO_PT, PAGE_SIZES, MARGIN_PT, QUALITY_MAP,
     formatBytes, getOptions, calcLayout, processImageFile, imageViaCanvas,
-    isTiff, isHeic, makeThumbnail,
+    isTiff, isHeic, loadDrawable, makeThumbnail,
     IMAGE_OUTPUT_FORMATS, replaceExtension, uniqueName, canEncodeImage,
     downloadBlob, downloadPDF, showStatus, hideStatus, showProgress, resetProgress, openPreview, closeModal,
     normalizeAngle,
