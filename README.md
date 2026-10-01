@@ -36,11 +36,14 @@ PDF を PNG、JPG、WebP などの画像形式に変換。
 
 ### 高画質化
 
-ぼけた写真や低解像度の画像を、AI 超解像（Real-ESRGAN）で 2 倍に高画質化。
+ぼけた写真や低解像度の画像を、AI 超解像（Real-ESRGAN）で 2 倍 / 4 倍に高画質化。
 
 - 処理はすべて端末内で完結（画像は外部に送信されません）
-- 初回のみ AI モデルと実行環境（約 19MB）をダウンロード。ダウンロード前に確認を表示
-- 出力は元が PNG なら PNG、それ以外は JPG（品質 0.95）
+- 初回のみ AI モデルと実行環境（約 19MB、GPU 処理が使える環境では約 32MB）をダウンロード。ダウンロード前に確認を表示
+- WebGPU が使える環境では GPU 処理、使えなければ CPU 処理（WASM）
+- 複数枚を順番に処理（2 枚以上は ZIP でまとめて保存可能）。処理中は中断できる
+- 変換前後をスライダーで比較（狭い画面ではタップで切り替え）
+- 出力は元が PNG か透過のある画像なら PNG、それ以外は JPG（品質 0.95）
 - AI は細部を推定で補うため、文字や顔が不自然になる場合があります
 
 ### PDF 結合
@@ -204,7 +207,7 @@ MIT License
 | 名前 | 用途 | ライセンス |
 |---|---|---|
 | [Real-ESRGAN](https://github.com/xinntao/Real-ESRGAN)（`realesr-general-x4v3`） | 高画質化の AI モデル（`libs/models/`、`tools/convert-realesrgan.py` で ONNX に変換） | BSD-3-Clause, Copyright (c) 2021, Xintao Wang |
-| [onnxruntime-web](https://github.com/microsoft/onnxruntime) 1.30.0 | 高画質化の推論ランタイム（`libs/ort/`） | MIT, Copyright (c) Microsoft Corporation |
+| [onnxruntime-web](https://github.com/microsoft/onnxruntime) 1.30.0 | 高画質化の推論ランタイム（CPU 版は `libs/ort/`、WebGPU 版は jsDelivr から取得） | MIT, Copyright (c) Microsoft Corporation |
 
 ## 貢献
 

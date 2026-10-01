@@ -1,22 +1,37 @@
 // AI upscaling worker for the 高画質化 tool: loads onnxruntime-web + Real-ESRGAN and runs tiled inference.
 // The page decodes the image (HEIC etc. need the DOM) and sends raw RGBA; tiles come back as RGBA.
 
-const ORT_BASE = new URL('../libs/ort/', self.location).href;
 const MODEL_URL = new URL('../libs/models/realesr-general-x4v3-dn-medium.onnx', self.location).href;
-// Fallback totals for the progress bar when Content-Length is missing or reflects compressed size.
-const WASM_BYTES = 14239897;
 const MODEL_BYTES = 4866396;
+// CPU runtime is self-hosted. The WebGPU build's WASM (26.8MB) exceeds Cloudflare Pages' 25MiB file limit → CDN.
+// `bytes` are exact file sizes, used as progress totals (Content-Length may be the compressed size).
+const RUNTIMES = {
+  cpu: {
+    base: new URL('../libs/ort/', self.location).href,
+    script: 'ort.wasm.min.js',
+    wasm: 'ort-wasm-simd-threaded.wasm',
+    bytes: 14239897,
+  },
+  gpu: {
+    base: 'https://cdn.jsdelivr.net/npm/onnxruntime-web@1.30.0/dist/',
+    script: 'ort.webgpu.min.js',
+    wasm: 'ort-wasm-simd-threaded.asyncify.wasm',
+    bytes: 26781914,
+  },
+};
 
 const MODEL_SCALE = 4;
 const TILE = 256;
 const PAD = 16;
 
 let session = null;
+let backend = null;
+let cancelledJob = null;
 
 self.onmessage = e => {
   const msg = e.data;
   if (msg.type === 'init') {
-    init().catch(err => {
+    init(msg.runtime).catch(err => {
       console.error(err);
       self.postMessage({ type: 'init-error', message: String(err && err.message || err) });
     });
@@ -25,6 +40,8 @@ self.onmessage = e => {
       console.error(err);
       self.postMessage({ type: 'error', jobId: msg.jobId, message: String(err && err.message || err) });
     });
+  } else if (msg.type === 'cancel') {
+    cancelledJob = msg.jobId;
   }
 };
 
@@ -47,30 +64,43 @@ async function fetchBytes(url, onChunk) {
   return out;
 }
 
-async function init() {
+async function init(runtimeName) {
   if (session) {
-    self.postMessage({ type: 'ready', backend: 'wasm' });
+    self.postMessage({ type: 'ready', backend });
     return;
   }
-  importScripts(ORT_BASE + 'ort.wasm.min.js');
+  const rt = RUNTIMES[runtimeName] || RUNTIMES.cpu;
+  if (typeof ort === 'undefined') importScripts(rt.base + rt.script);
 
-  const total = WASM_BYTES + MODEL_BYTES;
+  const total = rt.bytes + MODEL_BYTES;
   let loaded = 0;
   const onChunk = n => {
     loaded += n;
     self.postMessage({ type: 'download', loaded: Math.min(loaded, total), total });
   };
   const [wasm, model] = await Promise.all([
-    fetchBytes(ORT_BASE + 'ort-wasm-simd-threaded.wasm', onChunk),
+    fetchBytes(rt.base + rt.wasm, onChunk),
     fetchBytes(MODEL_URL, onChunk),
   ]);
 
   // No COOP/COEP on this site → SharedArrayBuffer is unavailable, so stay single-threaded.
   ort.env.wasm.numThreads = 1;
-  ort.env.wasm.wasmPaths = ORT_BASE;
+  ort.env.wasm.wasmPaths = rt.base;
   ort.env.wasm.wasmBinary = wasm.buffer;
-  session = await ort.InferenceSession.create(model, { executionProviders: ['wasm'] });
-  self.postMessage({ type: 'ready', backend: 'wasm' });
+  if (rt === RUNTIMES.gpu) {
+    try {
+      session = await ort.InferenceSession.create(model, { executionProviders: ['webgpu'] });
+      backend = 'webgpu';
+    } catch (err) {
+      // Adapter present but unusable (driver/blocklist): the WebGPU build also runs on CPU.
+      console.warn('WebGPU が使えないため CPU 処理に切り替えます', err);
+    }
+  }
+  if (!session) {
+    session = await ort.InferenceSession.create(model, { executionProviders: ['wasm'] });
+    backend = 'wasm';
+  }
+  self.postMessage({ type: 'ready', backend });
 }
 
 // Split the image into TILE-sized cores, each with up to PAD px of context on every side.
@@ -110,7 +140,8 @@ function tileToTensorData(src, width, t) {
 
 // Model output (x4, padded) → RGBA for the tile core at `scale`.
 // For x2 each output pixel averages a 2×2 block, so no full x4 image is ever materialised.
-function composeTile(out, t, scale) {
+// Alpha isn't modelled: it is upscaled bilinearly from the source when the image has transparency.
+function composeTile(out, t, scale, src, width, height, hasAlpha) {
   const f = MODEL_SCALE / scale;
   const outW = t.pw * MODEL_SCALE;
   const plane = outW * t.ph * MODEL_SCALE;
@@ -135,21 +166,41 @@ function composeTile(out, t, scale) {
       rgba[d] = r * norm; // Uint8ClampedArray rounds and clamps
       rgba[d + 1] = g * norm;
       rgba[d + 2] = b * norm;
-      rgba[d + 3] = 255;
+      rgba[d + 3] = hasAlpha ? sampleAlpha(src, width, height, (t.x * scale + i + 0.5) / scale - 0.5, (t.y * scale + j + 0.5) / scale - 0.5) : 255;
     }
   }
   return rgba;
 }
 
-async function run({ jobId, width, height, rgba, scale }) {
+function sampleAlpha(src, width, height, sx, sy) {
+  sx = Math.min(Math.max(sx, 0), width - 1);
+  sy = Math.min(Math.max(sy, 0), height - 1);
+  const x0 = Math.floor(sx), y0 = Math.floor(sy);
+  const x1 = Math.min(x0 + 1, width - 1), y1 = Math.min(y0 + 1, height - 1);
+  const fx = sx - x0, fy = sy - y0;
+  const a = (x, y) => src[(y * width + x) * 4 + 3];
+  const top = a(x0, y0) + (a(x1, y0) - a(x0, y0)) * fx;
+  const bottom = a(x0, y1) + (a(x1, y1) - a(x0, y1)) * fx;
+  return top + (bottom - top) * fy;
+}
+
+// Let queued messages (e.g. 'cancel') run: session.run's continuation is only a microtask.
+const yieldToEventLoop = () => new Promise(r => setTimeout(r, 0));
+
+async function run({ jobId, width, height, rgba, scale, hasAlpha }) {
   if (!session) throw new Error('モデルが読み込まれていません');
   const src = new Uint8ClampedArray(rgba);
   const tiles = planTiles(width, height, TILE, PAD);
   for (let n = 0; n < tiles.length; n++) {
+    await yieldToEventLoop();
+    if (cancelledJob === jobId) {
+      self.postMessage({ type: 'cancelled', jobId });
+      return;
+    }
     const t = tiles[n];
     const input = new ort.Tensor('float32', tileToTensorData(src, width, t), [1, 3, t.ph, t.pw]);
     const { output } = await session.run({ input });
-    const tile = composeTile(output.data, t, scale);
+    const tile = composeTile(await output.getData(), t, scale, src, width, height, hasAlpha);
     input.dispose();
     output.dispose();
     self.postMessage({
