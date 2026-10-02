@@ -312,7 +312,7 @@
     <!-- ════════ 高画質化 ════════ -->
     <section data-tool="enhance" class="hidden">
       <div id="enh-drop-zone" class="drop-zone">
-        <input type="file" id="enh-file-input" accept="image/jpeg,image/png,image/webp,image/gif,image/bmp,image/tiff,image/heic,image/heif,.tif,.tiff,.heic,.heif" hidden>
+        <input type="file" id="enh-file-input" multiple accept="image/jpeg,image/png,image/webp,image/gif,image/bmp,image/tiff,image/heic,image/heif,.tif,.tiff,.heic,.heif" hidden>
         <div class="drop-zone-inner">
           <svg class="drop-icon" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
             <rect x="6" y="20" width="20" height="24" rx="3" stroke="currentColor" stroke-width="3"/>
@@ -323,25 +323,41 @@
           <p class="drop-text">ここに画像をドロップ</p>
           <p class="drop-subtext">または</p>
           <button class="btn-select" id="enh-select-btn">ファイルを選択</button>
-          <p class="drop-hint">ぼけた写真や低解像度の画像を、AI で2倍に高画質化します（JPG・PNG・WebP・GIF・BMP・TIFF・HEIC）</p>
+          <p class="drop-hint">ぼけた写真や低解像度の画像を、AI で2倍・4倍に高画質化します（JPG・PNG・WebP・GIF・BMP・TIFF・HEIC）</p>
         </div>
       </div>
 
       <div id="enh-workspace" class="workspace hidden">
         <div class="batch-toolbar">
-          <button class="batch-btn danger" id="enh-clear">削除</button>
+          <button class="batch-btn danger" id="enh-clear">全て削除</button>
         </div>
 
         <div id="enh-file-list" class="file-list"></div>
 
+        <div class="add-more-row">
+          <button class="btn-add-more" id="enh-add-more-btn">+ 画像を追加</button>
+        </div>
+
+        <div class="options-panel">
+          <div class="option-group">
+            <label class="option-label">倍率</label>
+            <div class="option-buttons" data-opt="scale" id="enh-scale">
+              <button class="opt-btn active" data-value="2">2倍</button>
+              <button class="opt-btn" data-value="4" id="enh-scale-4">4倍</button>
+            </div>
+            <p id="enh-scale-hint" class="enh-hint hidden"></p>
+          </div>
+        </div>
+
         <ul class="enh-notice">
-          <li>初回のみ約19MBのデータ（AIモデルと実行環境）をダウンロードします</li>
+          <li>初回のみ約19MB（GPU処理が使える環境では約32MB）のデータ（AIモデルと実行環境）をダウンロードします</li>
           <li>処理はすべて端末内で行い、画像を外部に送信することはありません</li>
           <li>AIは細部を推定で補うため、文字や顔が不自然になる場合があります</li>
         </ul>
 
         <div class="convert-row">
           <button class="btn-convert" id="enh-run-btn">高画質化する</button>
+          <button class="btn-preview hidden" id="enh-cancel-btn">中断</button>
         </div>
 
         <div id="enh-consent" class="enh-consent hidden" role="dialog" aria-labelledby="enh-consent-text">
@@ -361,7 +377,12 @@
           <button class="btn-preview hidden" id="enh-retry-btn">再試行</button>
         </div>
 
-        <div id="enh-results" class="enh-results hidden" aria-label="高画質化の結果"></div>
+        <div id="enh-results-wrap" class="enh-results-wrap hidden">
+          <div id="enh-results" class="enh-results" aria-label="高画質化の結果"></div>
+          <div class="convert-row">
+            <button class="btn-preview hidden" id="enh-zip-btn">まとめて保存（ZIP）</button>
+          </div>
+        </div>
       </div>
     </section>
 
@@ -675,6 +696,29 @@
         <span id="preview-size" class="preview-size"></span>
         <button class="btn-modal-cancel" id="modal-cancel">閉じる</button>
         <button class="btn-modal-download" id="modal-download">ダウンロード</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Enhance before/after comparison -->
+  <div id="enh-compare-modal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="enh-compare-title">
+    <div class="modal-overlay" id="enh-compare-overlay"></div>
+    <div class="modal-dialog enh-compare-dialog">
+      <div class="modal-header">
+        <h2 class="modal-title" id="enh-compare-title">比較</h2>
+        <button class="modal-close" id="enh-compare-close" aria-label="閉じる">×</button>
+      </div>
+      <div class="modal-body enh-compare-body">
+        <div id="enh-compare" class="enh-compare">
+          <img id="enh-compare-after" alt="高画質化後">
+          <div id="enh-compare-before-wrap" class="enh-compare-before"><img id="enh-compare-before" alt="元画像"></div>
+          <div id="enh-compare-divider" class="enh-compare-divider" aria-hidden="true"></div>
+          <span class="enh-compare-tag enh-compare-tag-left" aria-hidden="true">元画像</span>
+          <span class="enh-compare-tag enh-compare-tag-right" aria-hidden="true">高画質化後</span>
+          <span id="enh-compare-state" class="enh-compare-tag enh-compare-state" aria-live="polite">高画質化後</span>
+        </div>
+        <input type="range" id="enh-compare-range" class="enh-compare-range" min="0" max="100" value="50" aria-label="比較位置（左に動かすと高画質化後、右に動かすと元画像の範囲が広がります）">
+        <button class="batch-btn enh-compare-toggle" id="enh-compare-toggle" aria-pressed="false">元画像と切り替え</button>
       </div>
     </div>
   </div>

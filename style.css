@@ -1362,3 +1362,108 @@ footer {
   font-size: 0.78rem;
   color: var(--text-muted);
 }
+
+.enh-hint {
+  margin: 0;
+  font-size: 0.78rem;
+  color: var(--status-error-text);
+}
+
+.file-card.enh-card-error .enh-card-size {
+  color: var(--status-error-text);
+}
+
+.file-card.enh-card-error .file-card-thumb {
+  opacity: 0.4;
+}
+
+.enh-results-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.enh-compare-dialog {
+  max-width: 1000px;
+}
+
+.enh-compare-body {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding: 16px;
+  overflow: auto;
+}
+
+.enh-compare {
+  position: relative;
+  max-width: 100%;
+  overflow: hidden;
+  border-radius: 8px;
+  cursor: ew-resize;
+  touch-action: none;
+  user-select: none;
+  /* Checkerboard so transparent areas are visible */
+  background: repeating-conic-gradient(var(--surface-3) 0% 25%, var(--card-bg) 0% 50%) 50% / 20px 20px;
+}
+
+.enh-compare img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  pointer-events: none;
+}
+
+.enh-compare-before {
+  position: absolute;
+  inset: 0;
+}
+
+.enh-compare-divider {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  margin-left: -1px;
+  background: #fff;
+  box-shadow: 0 0 4px rgba(0, 0, 0, 0.6);
+  pointer-events: none;
+}
+
+.enh-compare-tag {
+  position: absolute;
+  top: 8px;
+  padding: 2px 8px;
+  border-radius: 4px;
+  background: rgba(0, 0, 0, 0.55);
+  color: #fff;
+  font-size: 0.75rem;
+  pointer-events: none;
+}
+
+.enh-compare-tag-left { left: 8px; }
+.enh-compare-tag-right { right: 8px; }
+.enh-compare-state { left: 8px; display: none; }
+
+.enh-compare-range {
+  width: 100%;
+  max-width: 480px;
+  accent-color: var(--accent);
+}
+
+.enh-compare-toggle { display: none; }
+
+@media (max-width: 600px) {
+  .enh-compare { cursor: pointer; touch-action: auto; }
+  .enh-compare-divider,
+  .enh-compare-tag-left,
+  .enh-compare-tag-right,
+  .enh-compare-range { display: none; }
+  .enh-compare-state,
+  .enh-compare-toggle { display: inline-block; }
+
+  .enh-result { flex-wrap: wrap; }
+}
