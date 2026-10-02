@@ -347,11 +347,21 @@
             </div>
             <p id="enh-scale-hint" class="enh-hint hidden"></p>
           </div>
+
+          <div class="option-group">
+            <label class="option-label">ノイズ除去</label>
+            <div class="option-buttons" data-opt="strength" id="enh-strength">
+              <button class="opt-btn" data-value="weak">弱</button>
+              <button class="opt-btn active" data-value="medium">中</button>
+              <button class="opt-btn" data-value="strong">強</button>
+            </div>
+            <p class="enh-note">強いほどノイズや圧縮の乱れが消えますが、細部も失われやすくなります。初めて選ぶ強さは約5MBを追加でダウンロードします</p>
+          </div>
         </div>
 
         <ul class="enh-notice">
           <li>初回のみ約19MB（GPU処理が使える環境では約32MB）のデータ（AIモデルと実行環境）をダウンロードします</li>
-          <li>処理はすべて端末内で行い、画像を外部に送信することはありません</li>
+          <li>処理はすべて端末内で行い、画像を外部に送信することはありません。一度使えばオフラインでも使えます</li>
           <li>AIは細部を推定で補うため、文字や顔が不自然になる場合があります</li>
         </ul>
 
@@ -381,6 +391,7 @@
           <div id="enh-results" class="enh-results" aria-label="高画質化の結果"></div>
           <div class="convert-row">
             <button class="btn-preview hidden" id="enh-zip-btn">まとめて保存（ZIP）</button>
+            <button class="btn-convert" id="enh-pdf-btn" aria-label="結果を「画像 → PDF」に追加して開く">PDFにする</button>
           </div>
         </div>
       </div>

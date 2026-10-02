@@ -1,20 +1,27 @@
 // AI upscaling worker for the 高画質化 tool: loads onnxruntime-web + Real-ESRGAN and runs tiled inference.
 // The page decodes the image (HEIC etc. need the DOM) and sends raw RGBA; tiles come back as RGBA.
 
-const MODEL_URL = new URL('../libs/models/realesr-general-x4v3-dn-medium.onnx', self.location).href;
-const MODEL_BYTES = 4866396;
+// Runtime + models are cached here on first use so the tool works offline afterwards (F6-2, F6-4).
+// Keep in sync with sw.js, which must not delete this cache on activate.
+const ENHANCE_CACHE = 'enhance-models-v1';
+const MODEL_BASE = new URL('../libs/models/', self.location).href;
+// Noise-reduction strengths, each a separately converted model (DNI-interpolated weights; see tools/).
+const STRENGTHS = ['weak', 'medium', 'strong'];
+const MODEL_BYTES = 4866396; // identical for every strength
 // CPU runtime is self-hosted. The WebGPU build's WASM (26.8MB) exceeds Cloudflare Pages' 25MiB file limit → CDN.
 // `bytes` are exact file sizes, used as progress totals (Content-Length may be the compressed size).
 const RUNTIMES = {
   cpu: {
     base: new URL('../libs/ort/', self.location).href,
     script: 'ort.wasm.min.js',
+    glue: 'ort-wasm-simd-threaded.mjs',
     wasm: 'ort-wasm-simd-threaded.wasm',
     bytes: 14239897,
   },
   gpu: {
     base: 'https://cdn.jsdelivr.net/npm/onnxruntime-web@1.30.0/dist/',
     script: 'ort.webgpu.min.js',
+    glue: 'ort-wasm-simd-threaded.asyncify.mjs',
     wasm: 'ort-wasm-simd-threaded.asyncify.wasm',
     bytes: 26781914,
   },
@@ -24,14 +31,16 @@ const MODEL_SCALE = 4;
 const TILE = 256;
 const PAD = 16;
 
+let runtimeName = null; // fixed once loaded into this worker
 let session = null;
+let sessionModel = null;
 let backend = null;
 let cancelledJob = null;
 
 self.onmessage = e => {
   const msg = e.data;
   if (msg.type === 'init') {
-    init(msg.runtime).catch(err => {
+    init(msg.runtime, msg.strength).catch(err => {
       console.error(err);
       self.postMessage({ type: 'init-error', message: String(err && err.message || err) });
     });
@@ -45,9 +54,24 @@ self.onmessage = e => {
   }
 };
 
-async function fetchBytes(url, onChunk) {
-  const res = await fetch(url);
-  if (!res.ok) throw new Error(`HTTP ${res.status}: ${url}`);
+async function openCache() {
+  try {
+    return self.caches ? await caches.open(ENHANCE_CACHE) : null;
+  } catch {
+    return null; // e.g. storage blocked → just use the network
+  }
+}
+
+async function fetchBytes(url, onChunk = () => {}) {
+  const cache = await openCache();
+  let res = cache && await cache.match(url);
+  let storing = null;
+  if (!res) {
+    res = await fetch(url);
+    if (!res.ok) throw new Error(`HTTP ${res.status}: ${url}`);
+    // Stored in parallel with reading so progress stays live; put() only commits a complete body.
+    if (cache) storing = cache.put(url, res.clone()).catch(err => console.warn('キャッシュに保存できませんでした', err));
+  }
   const reader = res.body.getReader();
   const chunks = [];
   let size = 0;
@@ -58,36 +82,56 @@ async function fetchBytes(url, onChunk) {
     size += value.length;
     onChunk(value.length);
   }
+  await storing;
   const out = new Uint8Array(size);
   let offset = 0;
   for (const c of chunks) { out.set(c, offset); offset += c.length; }
   return out;
 }
 
-async function init(runtimeName) {
-  if (session) {
+// Scripts are loaded from blob URLs of the cached bytes, so offline use doesn't depend on the service worker.
+async function loadRuntime(name, onChunk) {
+  const rt = RUNTIMES[name];
+  const [script, glue, wasm] = await Promise.all([
+    fetchBytes(rt.base + rt.script),
+    fetchBytes(rt.base + rt.glue),
+    fetchBytes(rt.base + rt.wasm, onChunk),
+  ]);
+  const jsUrl = bytes => URL.createObjectURL(new Blob([bytes], { type: 'text/javascript' }));
+  importScripts(jsUrl(script));
+  // No COOP/COEP on this site → SharedArrayBuffer is unavailable, so stay single-threaded.
+  ort.env.wasm.numThreads = 1;
+  ort.env.wasm.wasmPaths = { mjs: jsUrl(glue) };
+  ort.env.wasm.wasmBinary = wasm.buffer;
+  runtimeName = name;
+}
+
+async function init(requestedRuntime, strength) {
+  const modelUrl = `${MODEL_BASE}realesr-general-x4v3-dn-${STRENGTHS.includes(strength) ? strength : 'medium'}.onnx`;
+  if (session && sessionModel === modelUrl) {
     self.postMessage({ type: 'ready', backend });
     return;
   }
-  const rt = RUNTIMES[runtimeName] || RUNTIMES.cpu;
-  if (typeof ort === 'undefined') importScripts(rt.base + rt.script);
+  const needRuntime = !runtimeName;
+  const name = runtimeName || (RUNTIMES[requestedRuntime] ? requestedRuntime : 'cpu');
 
-  const total = rt.bytes + MODEL_BYTES;
+  const total = (needRuntime ? RUNTIMES[name].bytes : 0) + MODEL_BYTES;
   let loaded = 0;
   const onChunk = n => {
     loaded += n;
     self.postMessage({ type: 'download', loaded: Math.min(loaded, total), total });
   };
-  const [wasm, model] = await Promise.all([
-    fetchBytes(rt.base + rt.wasm, onChunk),
-    fetchBytes(MODEL_URL, onChunk),
+  const [, model] = await Promise.all([
+    needRuntime ? loadRuntime(name, onChunk) : null,
+    fetchBytes(modelUrl, onChunk),
   ]);
 
-  // No COOP/COEP on this site → SharedArrayBuffer is unavailable, so stay single-threaded.
-  ort.env.wasm.numThreads = 1;
-  ort.env.wasm.wasmPaths = rt.base;
-  ort.env.wasm.wasmBinary = wasm.buffer;
-  if (rt === RUNTIMES.gpu) {
+  if (session) {
+    await session.release();
+    session = null;
+    sessionModel = null;
+  }
+  if (name === 'gpu' && backend !== 'wasm') {
     try {
       session = await ort.InferenceSession.create(model, { executionProviders: ['webgpu'] });
       backend = 'webgpu';
@@ -100,6 +144,7 @@ async function init(runtimeName) {
     session = await ort.InferenceSession.create(model, { executionProviders: ['wasm'] });
     backend = 'wasm';
   }
+  sessionModel = modelUrl;
   self.postMessage({ type: 'ready', backend });
 }
 

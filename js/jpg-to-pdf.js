@@ -90,6 +90,9 @@
     }
   }
 
+  // Entry point for other tools (e.g. 高画質化 → "PDFにする").
+  PdfApp.addImagesToPdf = addFiles;
+
   function showWorkspace() {
     dropZone.classList.add('hidden');
     workspace.classList.remove('hidden');

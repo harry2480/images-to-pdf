@@ -3,13 +3,19 @@
 (() => {
   const {
     isTiff, isHeic, loadDrawable, makeThumbnail, replaceExtension, uniqueName, getOptions,
-    downloadBlob, formatBytes, showStatus, hideStatus, showProgress, resetProgress,
+    downloadBlob, formatBytes, showStatus, hideStatus, showProgress, resetProgress, showTool,
   } = PdfApp;
 
   // iOS Safari's canvas limit is ~16.7M px; keep the output below it. Tune per device if needed.
   const MAX_OUTPUT_PIXELS = 16000000;
   const JPEG_QUALITY = 0.95;
   const DOWNLOAD_MB = { cpu: 19, gpu: 32 };
+  // Keep in sync with js/enhance-worker.js — used to skip the download prompt once the runtime is cached.
+  const ENHANCE_CACHE = 'enhance-models-v1';
+  const RUNTIME_WASM_URL = {
+    cpu: new URL('libs/ort/ort-wasm-simd-threaded.wasm', location.href).href,
+    gpu: 'https://cdn.jsdelivr.net/npm/onnxruntime-web@1.30.0/dist/ort-wasm-simd-threaded.asyncify.wasm',
+  };
   const BACKEND_LABEL = { webgpu: 'GPU処理', wasm: 'CPU処理' };
   // Formats an <img> can show directly (for the "before" side of the comparison).
   const NATIVE_PREVIEW = ['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'image/bmp'];
@@ -25,8 +31,8 @@
   let results = []; // { name, blob, url, beforeUrl, w, h }
   let usedNames = new Set();
   let worker = null;
-  let workerReady = null; // Promise<backend> resolved once the model is loaded
-  let gpuCheck = null;    // Promise<boolean>
+  let workerRuntime = null; // runtime the worker has loaded (fixed for its lifetime)
+  let gpuCheck = null;      // Promise<boolean>
   let preferGpu = true;   // dropped after a failed GPU runtime download so a retry uses the self-hosted CPU one
   let consented = false;
   let isProcessing = false;
@@ -57,6 +63,7 @@
   const resultsWrap = document.getElementById('enh-results-wrap');
   const resultsEl   = document.getElementById('enh-results');
   const zipBtn      = document.getElementById('enh-zip-btn');
+  const pdfBtn      = document.getElementById('enh-pdf-btn');
 
   // ── File input / drag-drop ──
   selectBtn.addEventListener('click', () => fileInput.click());
@@ -220,14 +227,28 @@
     return gpuCheck;
   }
 
-  function ensureWorker(runtime) {
-    if (workerReady) return workerReady;
-    workerReady = new Promise((resolve, reject) => {
-      worker = new Worker('js/enhance-worker.js');
+  async function isRuntimeCached(runtime) {
+    try {
+      const cache = await caches.open(ENHANCE_CACHE);
+      return !!(await cache.match(RUNTIME_WASM_URL[runtime]));
+    } catch {
+      return false;
+    }
+  }
+
+  // Loads the runtime (first call only) and the model for `strength`; resolves with the backend in use.
+  function loadModel(runtime, strength) {
+    if (!worker) worker = new Worker('js/enhance-worker.js');
+    const wk = worker;
+    return new Promise((resolve, reject) => {
+      const cleanup = () => {
+        wk.removeEventListener('message', onMessage);
+        wk.removeEventListener('error', onError);
+      };
       const fail = err => {
-        worker.terminate();
-        worker = null;
-        workerReady = null; // allow retry
+        cleanup();
+        wk.terminate(); // a half-initialised worker can't be reused; the next attempt starts fresh
+        if (worker === wk) { worker = null; workerRuntime = null; }
         reject(err);
       };
       const onMessage = e => {
@@ -236,19 +257,18 @@
           const pct = (msg.loaded / msg.total) * 100;
           showProgress(progressEl, pct, `ダウンロード中 ${formatBytes(msg.loaded)} / ${formatBytes(msg.total)}`);
         } else if (msg.type === 'ready') {
-          worker.removeEventListener('message', onMessage);
-          worker.removeEventListener('error', onError);
+          cleanup();
+          workerRuntime = workerRuntime || runtime;
           resolve(msg.backend);
         } else if (msg.type === 'init-error') {
           fail(new Error(msg.message));
         }
       };
       const onError = e => fail(new Error(e.message || 'Worker の起動に失敗しました'));
-      worker.addEventListener('message', onMessage);
-      worker.addEventListener('error', onError);
-      worker.postMessage({ type: 'init', runtime });
+      wk.addEventListener('message', onMessage);
+      wk.addEventListener('error', onError);
+      wk.postMessage({ type: 'init', runtime, strength });
     });
-    return workerReady;
   }
 
   function askConsent(runtime) {
@@ -286,8 +306,8 @@
     retryBtn.classList.add('hidden');
     hideStatus(statusEl);
     runBtn.disabled = true;
-    const runtime = preferGpu && await hasUsableGpu() ? 'gpu' : 'cpu';
-    if (!consented) {
+    const runtime = workerRuntime || (preferGpu && await hasUsableGpu() ? 'gpu' : 'cpu');
+    if (!consented && !workerRuntime && !(await isRuntimeCached(runtime))) {
       const ok = await askConsent(runtime);
       if (!ok) { runBtn.disabled = false; return; }
       consented = true;
@@ -295,19 +315,22 @@
 
     setProcessing(true);
     try {
+      const opts = getOptions(root);
+      const runtimeLoaded = !!workerRuntime;
       let backend;
       try {
-        backend = await ensureWorker(runtime);
+        backend = await loadModel(runtime, opts.strength || 'medium');
       } catch (err) {
         console.error(err);
-        if (runtime === 'gpu') preferGpu = false;
+        // Only a failed GPU *runtime* download (e.g. CDN blocked) should push retries to the CPU runtime.
+        if (runtime === 'gpu' && !runtimeLoaded) preferGpu = false;
         showStatus(statusEl, 'error', 'AIモデルを読み込めませんでした。通信環境を確認して、もう一度お試しください。');
         retryBtn.classList.remove('hidden');
         return;
       }
 
       await Promise.all(files.map(f => f.ready));
-      const scale = Number(getOptions(root).scale) || 2;
+      const scale = Number(opts.scale) || 2;
       // Snapshot: images added mid-run must not leak into this batch.
       const batch = files.filter(f => f.w && fits(f, scale));
       if (batch.length === 0) {
@@ -351,6 +374,7 @@
     cancelBtn.disabled = false;
     clearBtn.disabled = on;
     zipBtn.disabled = on;
+    pdfBtn.disabled = on;
   }
 
   function hasTransparency(rgba) {
@@ -448,6 +472,7 @@
     results.push(r);
     resultsWrap.classList.remove('hidden');
     zipBtn.classList.toggle('hidden', results.length < 2);
+    pdfBtn.textContent = results.length > 1 ? `${results.length}枚をPDFにする` : 'PDFにする';
 
     const item = document.createElement('div');
     item.className = 'enh-result';
@@ -502,6 +527,14 @@
     } finally {
       zipBtn.disabled = false;
     }
+  });
+
+  // F5-4: hand the results to the 画像 → PDF tool and switch to it.
+  pdfBtn.addEventListener('click', () => {
+    if (results.length === 0) return;
+    PdfApp.addImagesToPdf(results.map(r => new File([r.blob], r.name, { type: r.blob.type })));
+    showTool('jpg-to-pdf');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   });
 
   // ── Before / after comparison (F5-1) ──
