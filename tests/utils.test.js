@@ -10,7 +10,8 @@ import {
   QUALITY_MAP,
   IMAGE_OUTPUT_FORMATS,
   replaceExtension,
-  uniqueName
+  uniqueName,
+  planTiles
 } from '../js/utils.js';
 
 describe('formatBytes', () => {
@@ -303,5 +304,31 @@ describe('uniqueName', () => {
   it('handles names without an extension', () => {
     const used = new Set(['a']);
     expect(uniqueName('a', used)).toBe('a (2)');
+  });
+});
+
+describe('planTiles', () => {
+  it('covers every pixel exactly once with the tile cores', () => {
+    const W = 1000, H = 750;
+    const tiles = planTiles(W, H, 256, 16);
+    expect(tiles).toHaveLength(12);
+    const area = tiles.reduce((s, t) => s + t.w * t.h, 0);
+    expect(area).toBe(W * H);
+  });
+
+  it('adds padding only where the image has neighbouring pixels', () => {
+    const [first, second] = planTiles(600, 100, 256, 16);
+    expect(first).toEqual({ x: 0, y: 0, w: 256, h: 100, px: 0, py: 0, pw: 272, ph: 100 });
+    expect(second).toEqual({ x: 256, y: 0, w: 256, h: 100, px: 240, py: 0, pw: 288, ph: 100 });
+  });
+
+  it('clips the last tile to the image edge', () => {
+    const tiles = planTiles(300, 300, 256, 16);
+    const last = tiles[tiles.length - 1];
+    expect(last).toMatchObject({ x: 256, y: 256, w: 44, h: 44, px: 240, py: 240, pw: 60, ph: 60 });
+  });
+
+  it('handles images smaller than one tile', () => {
+    expect(planTiles(10, 5, 256, 16)).toEqual([{ x: 0, y: 0, w: 10, h: 5, px: 0, py: 0, pw: 10, ph: 5 }]);
   });
 });

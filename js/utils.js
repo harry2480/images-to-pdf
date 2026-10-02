@@ -81,3 +81,23 @@ export function uniqueName(name, used) {
   used.add(candidate);
   return candidate;
 }
+
+// ── AI enhancement tiling (kept in sync with js/enhance-worker.js) ──
+// Split the image into tile-sized cores, each with up to `pad` px of context on every side.
+export function planTiles(width, height, tile, pad) {
+  const tiles = [];
+  for (let y = 0; y < height; y += tile) {
+    for (let x = 0; x < width; x += tile) {
+      const w = Math.min(tile, width - x);
+      const h = Math.min(tile, height - y);
+      const px = Math.max(0, x - pad);
+      const py = Math.max(0, y - pad);
+      tiles.push({
+        x, y, w, h, px, py,
+        pw: Math.min(width, x + w + pad) - px,
+        ph: Math.min(height, y + h + pad) - py,
+      });
+    }
+  }
+  return tiles;
+}

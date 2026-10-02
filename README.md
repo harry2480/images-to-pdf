@@ -34,6 +34,15 @@ PDF を PNG、JPG、WebP などの画像形式に変換。
 - JPG / WebP は品質を指定可能
 - WebP 出力はブラウザが対応している場合のみ選択可
 
+### 高画質化
+
+ぼけた写真や低解像度の画像を、AI 超解像（Real-ESRGAN）で 2 倍に高画質化。
+
+- 処理はすべて端末内で完結（画像は外部に送信されません）
+- 初回のみ AI モデルと実行環境（約 19MB）をダウンロード。ダウンロード前に確認を表示
+- 出力は元が PNG なら PNG、それ以外は JPG（品質 0.95）
+- AI は細部を推定で補うため、文字や顔が不自然になる場合があります
+
 ### PDF 結合
 
 複数の PDF ファイルを 1 つに結合。
@@ -189,6 +198,13 @@ GitHub へ push すると自動デプロイ：
 ## ライセンス
 
 MIT License
+
+### 同梱しているサードパーティ
+
+| 名前 | 用途 | ライセンス |
+|---|---|---|
+| [Real-ESRGAN](https://github.com/xinntao/Real-ESRGAN)（`realesr-general-x4v3`） | 高画質化の AI モデル（`libs/models/`、`tools/convert-realesrgan.py` で ONNX に変換） | BSD-3-Clause, Copyright (c) 2021, Xintao Wang |
+| [onnxruntime-web](https://github.com/microsoft/onnxruntime) 1.30.0 | 高画質化の推論ランタイム（`libs/ort/`） | MIT, Copyright (c) Microsoft Corporation |
 
 ## 貢献
 
