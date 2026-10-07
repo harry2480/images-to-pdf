@@ -112,6 +112,13 @@ export function shouldKeepOriginal(file, fmtKey, newSize, choice) {
   return choice === 'original' || isSameFormat(file, fmtKey);
 }
 
+// ── PDF page organizer (kept in sync with js/organize-pdf.js) ──
+// pages: [{ src, selected }] in display order → source page indices to write.
+export function resolveOrganizeOutput(pages, scope) {
+  const picked = scope === 'selected' ? pages.filter(p => p.selected) : pages;
+  return picked.map(p => p.src);
+}
+
 // ── AI enhancement tiling (kept in sync with js/enhance-worker.js) ──
 // Split the image into tile-sized cores, each with up to `pad` px of context on every side.
 export function planTiles(width, height, tile, pad) {

@@ -1511,3 +1511,161 @@ footer {
 .ci-card.ci-card-error .file-card-thumb {
   opacity: 0.4;
 }
+
+/* ── PDF Page Organizer ── */
+.org-hint {
+  font-size: 0.82rem;
+  color: var(--text-muted);
+  margin: 0;
+}
+
+.org-pages {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+  gap: 12px;
+  padding: 16px;
+  background: var(--surface-2);
+  border-radius: var(--radius);
+}
+
+.org-pages:empty {
+  display: none;
+}
+
+.org-empty {
+  text-align: center;
+  color: var(--text-muted);
+  font-size: 0.9rem;
+  padding: 24px 16px;
+  background: var(--surface-2);
+  border-radius: var(--radius);
+  margin: 0;
+}
+
+.org-page {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  border: 2px solid var(--border);
+  border-radius: 8px;
+  background: var(--card-bg);
+  cursor: grab;
+  transition: border-color 0.15s;
+}
+
+.org-page.selected {
+  border-color: var(--accent);
+  background: var(--accent-light);
+}
+
+.org-page.sortable-ghost {
+  opacity: 0.35;
+}
+
+.org-page.sortable-chosen {
+  box-shadow: 0 6px 24px rgba(0,0,0,0.14);
+}
+
+.org-check {
+  position: absolute;
+  top: 4px;
+  left: 4px;
+  z-index: 1;
+  display: flex;
+  padding: 4px;
+  cursor: pointer;
+}
+
+.org-check input {
+  width: 18px;
+  height: 18px;
+  margin: 0;
+  accent-color: var(--accent);
+  cursor: pointer;
+}
+
+.org-thumb {
+  height: 150px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 6px;
+  overflow: hidden;
+}
+
+.org-thumb canvas {
+  max-width: 100%;
+  max-height: 100%;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.15);
+  background: #fff;
+}
+
+.org-thumb-placeholder {
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: var(--text-muted);
+}
+
+.org-page-bar {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding: 4px;
+  border-top: 1px solid var(--border);
+}
+
+.org-page-label {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  line-height: 1.2;
+}
+
+.org-pos {
+  font-weight: 700;
+  font-size: 0.85rem;
+}
+
+.org-src {
+  font-size: 0.68rem;
+  color: var(--text-muted);
+}
+
+.org-icon-btn {
+  flex: none;
+  width: 28px;
+  height: 28px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--card-bg);
+  color: var(--text);
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+
+.org-icon-btn:hover:not(:disabled),
+.org-icon-btn:focus-visible {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.org-icon-btn:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+
+.org-busy {
+  pointer-events: none;
+}
+
+.batch-btn:disabled,
+.batch-btn:disabled:hover {
+  opacity: 0.5;
+  cursor: not-allowed;
+  border-color: var(--border);
+  background: var(--card-bg);
+  color: var(--text);
+}
