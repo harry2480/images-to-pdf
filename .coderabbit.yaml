@@ -1,0 +1,17 @@
+# yaml-language-server: $schema=https://coderabbit.ai/integrations/schema.v2.json
+#
+# CodeRabbit 設定。レビューコメント・要約・チャット応答を日本語で行う。
+language: ja-JP
+
+tone_instructions: >-
+  日本語で、簡潔かつ具体的にレビューしてください。指摘は重要度の高いものを優先し、
+  該当ファイル・行と修正案を明確に示してください。
+
+reviews:
+  # 同梱のサードパーティ（minify 済み）とロックファイルはレビュー対象外
+  path_filters:
+    - "!libs/**"
+    - "!package-lock.json"
+
+chat:
+  auto_reply: true
