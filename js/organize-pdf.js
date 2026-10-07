@@ -228,7 +228,9 @@
     cards.forEach(card => { card.querySelector('input[type="checkbox"]').checked = false; });
     pagesEl.replaceChildren(...cards);
     hideStatus(statusEl);
-    updateState();
+    // Selections are cleared, so a "selected only" scope would leave nothing to save.
+    // Clicking goes through the shared option handler and then updateState.
+    scopeGroup.querySelector('[data-value="all"]').click();
   });
 
   scopeGroup.addEventListener('click', updateState);
