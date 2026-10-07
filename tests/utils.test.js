@@ -390,18 +390,25 @@ describe('isSameFormat', () => {
 });
 
 describe('shouldKeepOriginal', () => {
-  const jpg = { type: 'image/jpeg', name: 'a.jpg', size: 1000 };
+  const jpg  = { type: 'image/jpeg', name: 'a.jpg', size: 1000 };
+  const heic = { type: '', name: 'a.heic', size: 1000 };
 
   it('keeps the original when same-format output is not smaller', () => {
-    expect(shouldKeepOriginal(jpg, 'jpeg', 1000)).toBe(true);
-    expect(shouldKeepOriginal(jpg, 'jpeg', 1200)).toBe(true);
+    expect(shouldKeepOriginal(jpg, 'jpeg', 1000, 'original')).toBe(true);
+    expect(shouldKeepOriginal(jpg, 'jpeg', 1200, 'jpeg')).toBe(true);
   });
 
   it('uses the new output when it is smaller', () => {
-    expect(shouldKeepOriginal(jpg, 'jpeg', 999)).toBe(false);
+    expect(shouldKeepOriginal(jpg, 'jpeg', 999, 'original')).toBe(false);
+    expect(shouldKeepOriginal(heic, 'jpeg', 999, 'original')).toBe(false);
   });
 
-  it('never keeps the original when the format changes', () => {
-    expect(shouldKeepOriginal(jpg, 'webp', 5000)).toBe(false);
+  it('keeps the original when an "original"-mode fallback format grows', () => {
+    expect(shouldKeepOriginal(heic, 'jpeg', 1500, 'original')).toBe(true);
+  });
+
+  it('delivers an explicitly chosen new format even if it grows', () => {
+    expect(shouldKeepOriginal(jpg, 'webp', 5000, 'webp')).toBe(false);
+    expect(shouldKeepOriginal(heic, 'jpeg', 1500, 'jpeg')).toBe(false);
   });
 });

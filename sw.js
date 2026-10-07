@@ -46,10 +46,24 @@ self.addEventListener('activate', event => {
   self.clients.claim();
 });
 
+// Lazy-loaded on first HEIC use; too large (~1.3MB) to precache for everyone,
+// so it is cached the first time it is fetched online and then works offline.
+const RUNTIME_CACHED = ['/libs/heic2any.min.js'];
+
 // Cache first, fall back to network
 self.addEventListener('fetch', event => {
   if (event.request.method !== 'GET') return;
+  const { pathname } = new URL(event.request.url);
   event.respondWith(
-    caches.match(event.request).then(cached => cached || fetch(event.request))
+    caches.match(event.request).then(cached => {
+      if (cached) return cached;
+      return fetch(event.request).then(res => {
+        if (res.ok && RUNTIME_CACHED.includes(pathname)) {
+          const copy = res.clone();
+          caches.open(CACHE_NAME).then(cache => cache.put(event.request, copy));
+        }
+        return res;
+      });
+    })
   );
 });

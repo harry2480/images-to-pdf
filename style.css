@@ -1490,6 +1490,12 @@ footer {
 .ci-card-size {
   font-size: 0.72rem;
   color: var(--text-muted);
+  overflow-wrap: anywhere;
+}
+
+.ci-busy .file-card-delete {
+  opacity: 0.3;
+  pointer-events: none;
 }
 
 .ci-card.ci-card-done .ci-card-size {
@@ -1497,6 +1503,7 @@ footer {
   font-weight: 600;
 }
 
+.ci-card.ci-card-warn .ci-card-size,
 .ci-card.ci-card-error .ci-card-size {
   color: var(--status-error-text);
 }

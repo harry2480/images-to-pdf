@@ -104,10 +104,12 @@ export function isSameFormat(file, fmtKey) {
   return false;
 }
 
-// Re-encoding to the same format can come out larger (already-optimised files, PNG).
-// In that case the untouched original is the better "compressed" result.
-export function shouldKeepOriginal(file, fmtKey, newSize) {
-  return isSameFormat(file, fmtKey) && newSize >= file.size;
+// A compressor must never hand back a bigger file unless the user asked for a new format:
+// same-format re-encodes (already-optimised JPG, PNG) and "original"-mode fallbacks
+// (HEIC/GIF → JPEG) can both grow, and then the untouched original is the better result.
+export function shouldKeepOriginal(file, fmtKey, newSize, choice) {
+  if (newSize < file.size) return false;
+  return choice === 'original' || isSameFormat(file, fmtKey);
 }
 
 // ── AI enhancement tiling (kept in sync with js/enhance-worker.js) ──

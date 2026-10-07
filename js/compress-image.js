@@ -21,10 +21,12 @@
     return 'jpeg';
   }
 
-  // Re-encoding to the same format can come out larger (already-optimised files, PNG).
-  // In that case the untouched original is the better "compressed" result.
-  function shouldKeepOriginal(file, fmtKey, newSize) {
-    return isSameFormat(file, fmtKey) && newSize >= file.size;
+  // A compressor must never hand back a bigger file unless the user asked for a new format:
+  // same-format re-encodes (already-optimised JPG, PNG) and "original"-mode fallbacks
+  // (HEIC/GIF → JPEG) can both grow, and then the untouched original is the better result.
+  function shouldKeepOriginal(file, fmtKey, newSize, choice) {
+    if (newSize < file.size) return false;
+    return choice === 'original' || isSameFormat(file, fmtKey);
   }
 
   function isSameFormat(file, fmtKey) {
@@ -44,6 +46,8 @@
   // ── State ──
   let files = []; // { id, file }
   let nextId = 0;
+  // Deleting while a batch runs would silently leave the image in the download, so deletion is locked.
+  let isCompressing = false;
   const canWebp = canEncodeImage('image/webp');
 
   // ── DOM ──
@@ -95,6 +99,7 @@
     if (files.length > 0) showWorkspace();
     updateNumbers();
     if (incoming.length < all.length) {
+      // Status lives outside the workspace so this is visible even with zero images added.
       showStatus(statusEl, 'error', '対応していない形式のファイルは追加されませんでした');
     } else if (incoming.some(isHeic)) {
       showStatus(statusEl, 'success', 'HEIC を変換中です…（初回は読み込みに時間がかかります）');
@@ -162,10 +167,12 @@
     const size = card.querySelector('.ci-card-size');
     size.textContent = text;
     card.classList.toggle('ci-card-done', state === 'done');
+    card.classList.toggle('ci-card-warn', state === 'warn');
     card.classList.toggle('ci-card-error', state === 'error');
   }
 
   function removeFile(id, card) {
+    if (isCompressing) return;
     files = files.filter(f => f.id !== id);
     card.remove();
     updateNumbers();
@@ -179,6 +186,7 @@
   }
 
   function clearAll() {
+    if (isCompressing) return;
     files = [];
     fileList.innerHTML = '';
     resetToDropZone();
@@ -193,7 +201,7 @@
   // Each file is handled independently so one broken image doesn't sink the batch.
   async function compressAll(entries, quality, formatChoice) {
     const used = new Set();
-    const outputs = []; // { name, bytes, mime, before }
+    const outputs = []; // { name, data: Uint8Array | File, size, mime, before, kept }
     const failed = [];  // source filenames
     let i = 0;
     for (const { id, file } of entries) {
@@ -204,28 +212,27 @@
         // toBlob silently falls back to PNG for unsupported types; don't mislabel that output.
         if (type !== fmt.mime) throw new Error(`このブラウザは ${fmt.ext.toUpperCase()} 出力に対応していません`);
 
-        let out;
-        if (shouldKeepOriginal(file, fmtKey, bytes.byteLength)) {
-          out = {
-            name: uniqueName(file.name, used),
-            bytes: new Uint8Array(await file.arrayBuffer()),
-            mime: fmt.mime,
-          };
+        if (shouldKeepOriginal(file, fmtKey, bytes.byteLength, formatChoice)) {
+          // Keep the File itself; it is only read if it has to go into a ZIP.
+          outputs.push({
+            name: uniqueName(file.name, used), data: file, size: file.size,
+            mime: file.type || 'application/octet-stream', before: file.size, kept: true,
+          });
           setCardResult(id, `${formatBytes(file.size)}（これ以上縮みません）`, 'done');
         } else {
-          out = {
-            name: uniqueName(replaceExtension(file.name, fmt.ext), used),
-            bytes: new Uint8Array(bytes),
-            mime: fmt.mime,
-          };
-          const label = `${formatBytes(file.size)} → ${formatBytes(out.bytes.length)}（${reductionLabel(file.size, out.bytes.length)}）`;
-          setCardResult(id, label, 'done');
+          const size = bytes.byteLength;
+          outputs.push({
+            name: uniqueName(replaceExtension(file.name, fmt.ext), used), data: new Uint8Array(bytes), size,
+            mime: fmt.mime, before: file.size, kept: false,
+          });
+          const label = `${formatBytes(file.size)} → ${formatBytes(size)}（${reductionLabel(file.size, size)}）`;
+          // Only reachable with an explicit JPG/WebP choice: the user asked for that format, so deliver it but flag it.
+          setCardResult(id, size >= file.size ? `${label} 元より大きくなりました` : label, size >= file.size ? 'warn' : 'done');
         }
-        outputs.push({ ...out, before: file.size });
       } catch (err) {
         console.error(`圧縮失敗: ${file.name}`, err);
         failed.push(file.name);
-        setCardResult(id, '圧縮できませんでした', 'error');
+        setCardResult(id, `圧縮できませんでした（${err.message}）`, 'error');
       }
       i++;
       showProgress(progressEl, (i / entries.length) * 100);
@@ -239,6 +246,9 @@
     const opts = getOptions(root);
     const quality = COMPRESS_LEVELS[opts.level] ?? COMPRESS_LEVELS.medium;
 
+    isCompressing = true;
+    clearBtn.disabled = true;
+    fileList.classList.add('ci-busy');
     compressBtn.disabled = true;
     compressBtn.classList.add('loading');
     compressBtn.textContent = '圧縮中';
@@ -255,21 +265,33 @@
         return;
       }
 
+      if (outputs.every(o => o.kept)) {
+        // Nothing got smaller: downloading identical copies would only look like a success.
+        const msg = 'これ以上縮められませんでした。出力形式を JPG か WebP に変えるか、圧縮率を「強」にしてください';
+        showStatus(statusEl, 'error', failed.length > 0 ? `${msg} ・ 圧縮できなかったファイル: ${failed.join(', ')}` : msg);
+        return;
+      }
+
       const before = outputs.reduce((s, o) => s + o.before, 0);
-      const after = outputs.reduce((s, o) => s + o.bytes.length, 0);
+      const after = outputs.reduce((s, o) => s + o.size, 0);
       const total = `${formatBytes(before)} → ${formatBytes(after)}（${reductionLabel(before, after)}）`;
 
       let msg;
       if (outputs.length === 1) {
-        downloadBlob(new Blob([outputs[0].bytes], { type: outputs[0].mime }), outputs[0].name);
+        downloadBlob(new Blob([outputs[0].data], { type: outputs[0].mime }), outputs[0].name);
         msg = `${outputs[0].name} を圧縮しました：${total}`;
       } else {
         const zipObj = {};
-        outputs.forEach(o => { zipObj[o.name] = o.bytes; });
+        for (const o of outputs) {
+          zipObj[o.name] = o.data instanceof Uint8Array ? o.data : new Uint8Array(await o.data.arrayBuffer());
+        }
         // Images are already compressed → store (level 0) to keep zipping fast.
         const zipped = fflate.zipSync(zipObj, { level: 0 });
         downloadBlob(new Blob([zipped], { type: 'application/zip' }), 'compressed_images.zip');
         msg = `${outputs.length} 枚を圧縮し ZIP にまとめました：合計 ${total}`;
+      }
+      if (outputs.some(o => !o.kept && o.size >= o.before)) {
+        msg += ' ・ 元より大きくなった画像があります（「元の形式」を選ぶと元のファイルのまま出力します）';
       }
       if (failed.length > 0) {
         showStatus(statusEl, 'error', `${msg} ・ 圧縮できなかったファイル: ${failed.join(', ')}`);
@@ -280,6 +302,9 @@
       console.error(err);
       showStatus(statusEl, 'error', `エラーが発生しました: ${err.message}`);
     } finally {
+      isCompressing = false;
+      clearBtn.disabled = false;
+      fileList.classList.remove('ci-busy');
       compressBtn.disabled = false;
       compressBtn.classList.remove('loading');
       compressBtn.textContent = '圧縮する';
