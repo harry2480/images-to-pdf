@@ -2,6 +2,11 @@ import { defineConfig } from 'vitest/config';
 
 export default defineConfig({
   test: {
-    environment: 'node'
+    environment: 'node',
+    coverage: {
+      provider: 'v8',
+      include: ['js/**/*.js'],
+      reporter: ['text', 'lcov']
+    }
   }
 });

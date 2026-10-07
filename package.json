@@ -5,9 +5,11 @@
   "description": "Browser-based PDF processing tool with privacy-first approach",
   "scripts": {
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage"
   },
   "devDependencies": {
+    "@vitest/coverage-v8": "^2.1.9",
     "playwright": "^1.60.0",
     "vitest": "^2.0.0"
   }
