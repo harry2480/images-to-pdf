@@ -1,5 +1,7 @@
 # PDF ツール
 
+[![codecov](https://codecov.io/gh/harry2480/images-to-pdf/graph/badge.svg)](https://codecov.io/gh/harry2480/images-to-pdf)
+
 ブラウザで動作する、プライベートな PDF 処理ツール。画像から PDF への変換、PDF の結合・圧縮、画像への変換などが全てブラウザ内で完結。**データはサーバーに送信されません。**
 
 [https://images-to-pdf.pages.dev](https://images-to-pdf.pages.dev)
