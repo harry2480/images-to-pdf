@@ -11,7 +11,11 @@ import {
   IMAGE_OUTPUT_FORMATS,
   replaceExtension,
   uniqueName,
-  planTiles
+  planTiles,
+  COMPRESS_LEVELS,
+  resolveCompressFormat,
+  isSameFormat,
+  shouldKeepOriginal
 } from '../js/utils.js';
 
 describe('formatBytes', () => {
@@ -330,5 +334,82 @@ describe('planTiles', () => {
 
   it('handles images smaller than one tile', () => {
     expect(planTiles(10, 5, 256, 16)).toEqual([{ x: 0, y: 0, w: 10, h: 5, px: 0, py: 0, pw: 10, ph: 5 }]);
+  });
+});
+
+describe('COMPRESS_LEVELS', () => {
+  it('orders quality strong < medium < light within (0, 1)', () => {
+    expect(COMPRESS_LEVELS.strong).toBeGreaterThan(0);
+    expect(COMPRESS_LEVELS.strong).toBeLessThan(COMPRESS_LEVELS.medium);
+    expect(COMPRESS_LEVELS.medium).toBeLessThan(COMPRESS_LEVELS.light);
+    expect(COMPRESS_LEVELS.light).toBeLessThan(1);
+  });
+});
+
+describe('resolveCompressFormat', () => {
+  const jpg  = { type: 'image/jpeg', name: 'a.jpg' };
+  const png  = { type: 'image/png',  name: 'a.png' };
+  const webp = { type: 'image/webp', name: 'a.webp' };
+  const gif  = { type: 'image/gif',  name: 'a.gif' };
+  const heic = { type: '',           name: 'a.HEIC' };
+
+  it('keeps JPG / PNG / WebP when "original" is chosen', () => {
+    expect(resolveCompressFormat(jpg, 'original', true)).toBe('jpeg');
+    expect(resolveCompressFormat(png, 'original', true)).toBe('png');
+    expect(resolveCompressFormat(webp, 'original', true)).toBe('webp');
+  });
+
+  it('falls back to JPEG for formats the canvas cannot write', () => {
+    expect(resolveCompressFormat(gif, 'original', true)).toBe('jpeg');
+    expect(resolveCompressFormat(heic, 'original', true)).toBe('jpeg');
+  });
+
+  it('detects PNG / WebP by extension when MIME is empty', () => {
+    expect(resolveCompressFormat({ type: '', name: 'x.PNG' }, 'original', true)).toBe('png');
+    expect(resolveCompressFormat({ type: '', name: 'x.webp' }, 'original', true)).toBe('webp');
+  });
+
+  it('uses JPEG instead of WebP when the browser cannot encode WebP', () => {
+    expect(resolveCompressFormat(webp, 'original', false)).toBe('jpeg');
+    expect(resolveCompressFormat(png, 'webp', false)).toBe('jpeg');
+  });
+
+  it('honours an explicit output format', () => {
+    expect(resolveCompressFormat(png, 'jpeg', true)).toBe('jpeg');
+    expect(resolveCompressFormat(jpg, 'webp', true)).toBe('webp');
+  });
+});
+
+describe('isSameFormat', () => {
+  it('matches by MIME or extension', () => {
+    expect(isSameFormat({ type: 'image/jpeg', name: 'a' }, 'jpeg')).toBe(true);
+    expect(isSameFormat({ type: '', name: 'a.JPEG' }, 'jpeg')).toBe(true);
+    expect(isSameFormat({ type: 'image/png', name: 'a.png' }, 'jpeg')).toBe(false);
+    expect(isSameFormat({ type: 'image/gif', name: 'a.gif' }, 'jpeg')).toBe(false);
+    expect(isSameFormat({ type: 'image/gif', name: 'a.gif' }, 'gif')).toBe(false);
+  });
+});
+
+describe('shouldKeepOriginal', () => {
+  const jpg  = { type: 'image/jpeg', name: 'a.jpg', size: 1000 };
+  const heic = { type: '', name: 'a.heic', size: 1000 };
+
+  it('keeps the original when same-format output is not smaller', () => {
+    expect(shouldKeepOriginal(jpg, 'jpeg', 1000, 'original')).toBe(true);
+    expect(shouldKeepOriginal(jpg, 'jpeg', 1200, 'jpeg')).toBe(true);
+  });
+
+  it('uses the new output when it is smaller', () => {
+    expect(shouldKeepOriginal(jpg, 'jpeg', 999, 'original')).toBe(false);
+    expect(shouldKeepOriginal(heic, 'jpeg', 999, 'original')).toBe(false);
+  });
+
+  it('keeps the original when an "original"-mode fallback format grows', () => {
+    expect(shouldKeepOriginal(heic, 'jpeg', 1500, 'original')).toBe(true);
+  });
+
+  it('delivers an explicitly chosen new format even if it grows', () => {
+    expect(shouldKeepOriginal(jpg, 'webp', 5000, 'webp')).toBe(false);
+    expect(shouldKeepOriginal(heic, 'jpeg', 1500, 'jpeg')).toBe(false);
   });
 });

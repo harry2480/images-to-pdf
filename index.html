@@ -52,6 +52,7 @@
     <button class="tool-nav-btn" data-tool="jpg-to-pdf">画像 → PDF</button>
     <button class="tool-nav-btn" data-tool="pdf-to-jpg">PDF → 画像</button>
     <button class="tool-nav-btn" data-tool="image-convert">画像形式変換</button>
+    <button class="tool-nav-btn" data-tool="compress-image">画像圧縮</button>
     <button class="tool-nav-btn" data-tool="enhance">高画質化</button>
     <button class="tool-nav-btn" data-tool="merge-pdf">PDF結合</button>
     <button class="tool-nav-btn" data-tool="compress-pdf">PDF圧縮</button>
@@ -307,6 +308,68 @@
         </div>
         <div id="ic-status" class="status hidden"></div>
       </div>
+    </section>
+
+    <!-- ════════ 画像圧縮 ════════ -->
+    <section data-tool="compress-image" class="hidden">
+      <div id="ci-drop-zone" class="drop-zone">
+        <input type="file" id="ci-file-input" multiple accept="image/jpeg,image/png,image/webp,image/gif,image/bmp,image/tiff,image/heic,image/heif,.tif,.tiff,.heic,.heif" hidden>
+        <div class="drop-zone-inner">
+          <svg class="drop-icon" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <rect x="10" y="12" width="44" height="40" rx="3" stroke="currentColor" stroke-width="3"/>
+            <path d="M18 42l8-10 6 7 4-5 8 8" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M32 4v10m0 0l-4-4m4 4l4-4M32 60V50m0 0l-4 4m4-4l4 4" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          <p class="drop-text">ここに画像をドロップ</p>
+          <p class="drop-subtext">または</p>
+          <button class="btn-select" id="ci-select-btn">ファイルを選択</button>
+          <p class="drop-hint">JPG・PNG・WebP・GIF・BMP・TIFF・HEIC のファイルサイズを縮小します</p>
+        </div>
+      </div>
+
+      <div id="ci-workspace" class="workspace hidden">
+        <div class="batch-toolbar">
+          <button class="batch-btn danger" id="ci-clear">全て削除</button>
+        </div>
+
+        <div id="ci-file-list" class="file-list"></div>
+
+        <div class="add-more-row">
+          <button class="btn-add-more" id="ci-add-more-btn">+ 画像を追加</button>
+        </div>
+
+        <div class="options-panel">
+          <div class="option-group">
+            <label class="option-label">圧縮率</label>
+            <div class="option-buttons" data-opt="level">
+              <button class="opt-btn" data-value="strong">強（小さい）</button>
+              <button class="opt-btn active" data-value="medium">中</button>
+              <button class="opt-btn" data-value="light">弱（高画質）</button>
+            </div>
+          </div>
+
+          <div class="option-group">
+            <label class="option-label">出力形式</label>
+            <div class="option-buttons" data-opt="format">
+              <button class="opt-btn active" data-value="original">元の形式</button>
+              <button class="opt-btn" data-value="jpeg">JPG</button>
+              <button class="opt-btn" data-value="webp" id="ci-format-webp">WebP</button>
+            </div>
+            <p class="ci-hint">PNG は「元の形式」ではほとんど縮みません。JPG か WebP を選ぶと大きく縮みます（JPG では透明部分が白になります）。GIF・BMP・TIFF・HEIC は「元の形式」でも JPG で出力し、小さくならなければ元のファイルのまま出力します。アニメーション GIF は最初の 1 コマだけになります。撮影日時や位置情報などのメタデータは削除されます。</p>
+          </div>
+        </div>
+
+        <div class="convert-row">
+          <button class="btn-convert" id="ci-btn">圧縮する</button>
+        </div>
+
+        <div id="ci-progress" class="progress-wrap hidden" role="progressbar" aria-label="画像圧縮の進捗" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
+          <div class="progress-track"><div class="progress-fill"></div></div>
+          <span class="progress-label">0%</span>
+        </div>
+      </div>
+
+      <div id="ci-status" class="status hidden" role="status"></div>
     </section>
 
     <!-- ════════ 高画質化 ════════ -->
@@ -775,6 +838,7 @@
   <script src="js/merge-pdf.js"></script>
   <script src="js/pdf-to-jpg.js"></script>
   <script src="js/image-convert.js"></script>
+  <script src="js/compress-image.js"></script>
   <script src="js/enhance-image.js"></script>
   <script src="js/compress-pdf.js"></script>
   <script src="js/rotate-pdf.js"></script>

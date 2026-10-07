@@ -132,7 +132,11 @@ window.PdfApp = (() => {
       const s = document.createElement('script');
       s.src = src;
       s.onload = resolve;
-      s.onerror = () => reject(new Error(`読み込み失敗: ${src}`));
+      s.onerror = () => {
+        delete loadedScripts[src]; // let a later attempt retry (e.g. after coming back online)
+        s.remove();
+        reject(new Error(`読み込み失敗: ${src}`));
+      };
       document.head.appendChild(s);
     });
     return loadedScripts[src];
@@ -213,7 +217,8 @@ window.PdfApp = (() => {
     ctx.drawImage(drawable, -w / 2, -h / 2);
     const q = outType === 'image/png' ? undefined : qualityVal;
     const blob = await new Promise(res => canvas.toBlob(res, outType, q));
-    if (!blob) throw new Error('変換失敗');
+    // toBlob yields null when the canvas exceeds the browser's size limit (notably iOS Safari).
+    if (!blob) throw new Error('画像が大きすぎて処理できませんでした');
     return { bytes: await blob.arrayBuffer(), isJpeg: outType === 'image/jpeg', type: blob.type };
   }
 

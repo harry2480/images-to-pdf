@@ -82,6 +82,36 @@ export function uniqueName(name, used) {
   return candidate;
 }
 
+// ── Image compression (kept in sync with js/compress-image.js) ──
+export const COMPRESS_LEVELS = { strong: 0.5, medium: 0.7, light: 0.85 };
+
+// Which IMAGE_OUTPUT_FORMATS key to encode to. "original" keeps JPG/PNG/WebP;
+// formats the canvas can't write (GIF/BMP/TIFF/HEIC) fall back to JPEG.
+export function resolveCompressFormat(file, choice, canWebp) {
+  if (choice === 'jpeg') return 'jpeg';
+  if (choice === 'webp') return canWebp ? 'webp' : 'jpeg';
+  const name = file.name || '';
+  if (file.type === 'image/png' || /\.png$/i.test(name)) return 'png';
+  if (file.type === 'image/webp' || /\.webp$/i.test(name)) return canWebp ? 'webp' : 'jpeg';
+  return 'jpeg';
+}
+
+export function isSameFormat(file, fmtKey) {
+  const name = file.name || '';
+  if (fmtKey === 'jpeg') return file.type === 'image/jpeg' || /\.jpe?g$/i.test(name);
+  if (fmtKey === 'png')  return file.type === 'image/png'  || /\.png$/i.test(name);
+  if (fmtKey === 'webp') return file.type === 'image/webp' || /\.webp$/i.test(name);
+  return false;
+}
+
+// A compressor must never hand back a bigger file unless the user asked for a new format:
+// same-format re-encodes (already-optimised JPG, PNG) and "original"-mode fallbacks
+// (HEIC/GIF → JPEG) can both grow, and then the untouched original is the better result.
+export function shouldKeepOriginal(file, fmtKey, newSize, choice) {
+  if (newSize < file.size) return false;
+  return choice === 'original' || isSameFormat(file, fmtKey);
+}
+
 // ── AI enhancement tiling (kept in sync with js/enhance-worker.js) ──
 // Split the image into tile-sized cores, each with up to `pad` px of context on every side.
 export function planTiles(width, height, tile, pad) {
