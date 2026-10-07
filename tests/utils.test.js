@@ -386,6 +386,7 @@ describe('isSameFormat', () => {
     expect(isSameFormat({ type: '', name: 'a.JPEG' }, 'jpeg')).toBe(true);
     expect(isSameFormat({ type: 'image/png', name: 'a.png' }, 'jpeg')).toBe(false);
     expect(isSameFormat({ type: 'image/gif', name: 'a.gif' }, 'jpeg')).toBe(false);
+    expect(isSameFormat({ type: 'image/gif', name: 'a.gif' }, 'gif')).toBe(false);
   });
 });
 
