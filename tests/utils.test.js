@@ -15,7 +15,8 @@ import {
   COMPRESS_LEVELS,
   resolveCompressFormat,
   isSameFormat,
-  shouldKeepOriginal
+  shouldKeepOriginal,
+  resolveOrganizeOutput
 } from '../js/utils.js';
 
 describe('formatBytes', () => {
@@ -411,5 +412,26 @@ describe('shouldKeepOriginal', () => {
   it('delivers an explicitly chosen new format even if it grows', () => {
     expect(shouldKeepOriginal(jpg, 'webp', 5000, 'webp')).toBe(false);
     expect(shouldKeepOriginal(heic, 'jpeg', 1500, 'jpeg')).toBe(false);
+  });
+});
+
+describe('resolveOrganizeOutput', () => {
+  const pages = [
+    { src: 2, selected: false },
+    { src: 0, selected: true },
+    { src: 3, selected: true },
+  ];
+
+  it('writes every remaining page in display order', () => {
+    expect(resolveOrganizeOutput(pages, 'all')).toEqual([2, 0, 3]);
+  });
+
+  it('writes only the selected pages, keeping display order', () => {
+    expect(resolveOrganizeOutput(pages, 'selected')).toEqual([0, 3]);
+  });
+
+  it('returns nothing when no page is left or selected', () => {
+    expect(resolveOrganizeOutput([], 'all')).toEqual([]);
+    expect(resolveOrganizeOutput([{ src: 0, selected: false }], 'selected')).toEqual([]);
   });
 });

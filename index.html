@@ -58,6 +58,7 @@
     <button class="tool-nav-btn" data-tool="compress-pdf">PDF圧縮</button>
     <button class="tool-nav-btn" data-tool="rotate-pdf">PDF回転</button>
     <button class="tool-nav-btn" data-tool="split-pdf">PDF分割</button>
+    <button class="tool-nav-btn" data-tool="organize-pdf">ページ整理</button>
     <button class="tool-nav-btn" data-tool="ocr">OCR</button>
     <button class="tool-nav-btn" data-tool="watermark">透かし</button>
   </nav>
@@ -551,6 +552,60 @@
       </div>
     </section>
 
+    <!-- ════════ ページ整理 ════════ -->
+    <section data-tool="organize-pdf" class="hidden">
+      <div id="org-drop-zone" class="drop-zone">
+        <input type="file" id="org-file-input" accept="application/pdf,.pdf" hidden>
+        <div class="drop-zone-inner">
+          <svg class="drop-icon" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <rect x="8" y="10" width="20" height="26" rx="2" stroke="currentColor" stroke-width="2.5"/>
+            <rect x="36" y="10" width="20" height="26" rx="2" stroke="currentColor" stroke-width="2.5"/>
+            <path d="M18 46h28m0 0l-6-5m6 5l-6 5" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          <p class="drop-text">ここにPDFをドロップ</p>
+          <p class="drop-subtext">または</p>
+          <button class="btn-select" id="org-select-btn">ファイルを選択</button>
+          <p class="drop-hint">ページの並べ替え・削除・抽出をして保存します</p>
+        </div>
+      </div>
+
+      <div id="org-workspace" class="workspace hidden">
+        <div id="org-info" class="p2j-info"></div>
+
+        <div class="batch-toolbar">
+          <button class="batch-btn" id="org-select-all">すべて選択</button>
+          <button class="batch-btn danger" id="org-delete-selected">選択を削除</button>
+          <button class="batch-btn" id="org-reset">最初に戻す</button>
+          <button class="batch-btn" id="org-change-file">別のPDFを開く</button>
+        </div>
+
+        <p class="org-hint">ドラッグか ← → ボタンで並べ替え。サムネイルをクリックすると選択できます。</p>
+        <div id="org-pages" class="org-pages" role="list" aria-label="ページ一覧"></div>
+        <p id="org-empty" class="org-empty hidden">すべてのページを削除しました。「最初に戻す」で元に戻せます。</p>
+
+        <div class="options-panel">
+          <div class="option-group">
+            <label class="option-label" id="org-scope-label">保存するページ</label>
+            <div class="option-buttons" data-opt="scope" role="group" aria-labelledby="org-scope-label">
+              <button class="opt-btn active" data-value="all" aria-pressed="true">残っているすべてのページ</button>
+              <button class="opt-btn" data-value="selected" aria-pressed="false">選択したページだけ</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="convert-row">
+          <button class="btn-preview" id="org-preview-btn">プレビュー</button>
+          <button class="btn-convert" id="org-save-btn">保存</button>
+        </div>
+
+        <div id="org-progress" class="progress-wrap hidden" role="progressbar" aria-label="PDF作成の進捗" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
+          <div class="progress-track"><div class="progress-fill"></div></div>
+          <span class="progress-label">0%</span>
+        </div>
+      </div>
+      <div id="org-status" class="status hidden" role="status"></div>
+    </section>
+
     <!-- ════════ PDF分割 ════════ -->
     <section data-tool="split-pdf" class="hidden">
       <div id="spl-drop-zone" class="drop-zone">
@@ -843,6 +898,7 @@
   <script src="js/compress-pdf.js"></script>
   <script src="js/rotate-pdf.js"></script>
   <script src="js/split-pdf.js"></script>
+  <script src="js/organize-pdf.js"></script>
   <script src="js/ocr.js"></script>
   <script src="js/watermark.js?v=2"></script>
   <script>
