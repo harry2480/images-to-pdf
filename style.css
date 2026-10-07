@@ -1474,3 +1474,33 @@ footer {
 
   .enh-result { flex-wrap: wrap; }
 }
+
+/* ── 画像圧縮 ── */
+.ci-hint {
+  margin: 0;
+  font-size: 0.75rem;
+  line-height: 1.5;
+  color: var(--text-muted);
+}
+
+.ci-card {
+  cursor: default;
+}
+
+.ci-card-size {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+}
+
+.ci-card.ci-card-done .ci-card-size {
+  color: var(--status-success-text);
+  font-weight: 600;
+}
+
+.ci-card.ci-card-error .ci-card-size {
+  color: var(--status-error-text);
+}
+
+.ci-card.ci-card-error .file-card-thumb {
+  opacity: 0.4;
+}

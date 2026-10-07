@@ -1,4 +1,4 @@
-const CACHE_NAME = 'pdf-tools-v5';
+const CACHE_NAME = 'pdf-tools-v6';
 // AI runtime + models, filled by js/enhance-worker.js on first use. Must survive app updates.
 const ENHANCE_CACHE = 'enhance-models-v1';
 
@@ -21,6 +21,7 @@ const STATIC_ASSETS = [
   '/js/merge-pdf.js',
   '/js/pdf-to-jpg.js',
   '/js/image-convert.js',
+  '/js/compress-image.js',
   '/js/enhance-image.js',
   '/js/enhance-worker.js',
   '/js/compress-pdf.js',
